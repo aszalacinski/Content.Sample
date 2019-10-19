@@ -5,28 +5,29 @@ using MediatR;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HAS.Content.Feature.Media
 {
-    public class FindById
+    public class FindByProfileId
     {
         private readonly IMediator _mediator;
 
-        public FindById(IMediator mediator) => _mediator = mediator;
+        public FindByProfileId(IMediator mediator) => _mediator = mediator;
 
-        public class FindByIdQuery : IRequest<FindByIdResult> 
-        { 
-            public FindByIdQuery(string id)
+        public class FindByProfileIdQuery : IRequest<IEnumerable<FindByProfileIdResult>>
+        {
+            public FindByProfileIdQuery(string profileId)
             {
-                Id = id;
+                ProfileId = profileId;
             }
 
-            public string Id { get; set; }
+            public string ProfileId { get; set; }
         }
 
-        public class FindByIdResult 
+        public class FindByProfileIdResult
         {
             public string Id { get; set; }
             public string InstructorId { get; set; }
@@ -48,37 +49,41 @@ namespace HAS.Content.Feature.Media
                 CreateMap<ContentDAO, ContentDetails>();
                 CreateMap<ContentDAO, StateDetails>();
                 CreateMap<ContentDAO, Manifest>();
-                CreateMap<ContentDAO, FindByIdResult>()
+                CreateMap<ContentDAO, FindByProfileIdResult>()
                     .ForMember(m => m.ContentDetails, opt => opt.MapFrom(src => src))
                     .ForMember(m => m.State, opt => opt.MapFrom(src => src))
                     .ForMember(m => m.Manifest, opt => opt.MapFrom(src => src));
             }
         }
 
-        public class FindByIdQueryHandler : IRequestHandler<FindByIdQuery, FindByIdResult>
+        public class FindByProfileIdQueryHandler : IRequestHandler<FindByProfileIdQuery, IEnumerable<FindByProfileIdResult>>
         {
             private readonly ContentContext _db;
             private readonly IConfigurationProvider _configuration;
 
-            public FindByIdQueryHandler(ContentContext db, IConfigurationProvider configuration)
+            public FindByProfileIdQueryHandler(ContentContext db, IConfigurationProvider configuration)
             {
                 _db = db;
                 _configuration = configuration;
             }
 
-            public async Task<FindByIdResult> Handle(FindByIdQuery request, CancellationToken cancellationToken)
+            public async Task<IEnumerable<FindByProfileIdResult>> Handle(FindByProfileIdQuery request, CancellationToken cancellationToken)
             {
                 var mapper = new Mapper(_configuration);
 
-                var projection = Builders<Data.ContentDAO>.Projection.Expression(x => mapper.Map<FindByIdResult>(x));
+                var projection = Builders<Data.ContentDAO>.Projection.Expression(x => mapper.Map<FindByProfileIdResult>(x));
 
-                var media = await _db.Content
-                                    .Find(x => x.Id == ObjectId.Parse(request.Id.ToString()))
-                                    .Project(projection)
-                                    .FirstOrDefaultAsync();
+                var results = await _db.Content
+                                        .Find(x => x.InstructorId == request.ProfileId)
+                                        .Project(projection)
+                                        .ToListAsync();
 
-                return media;
+                if(results.Count == 0)
+                {
+                    return new List<FindByProfileIdResult>();
+                }
 
+                return results;
             }
         }
     }

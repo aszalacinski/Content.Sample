@@ -10,6 +10,7 @@ using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using static HAS.Content.Feature.Media.FindById;
+using static HAS.Content.Feature.Media.FindByProfileId;
 using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
@@ -28,7 +29,7 @@ namespace HAS.Content.Controllers
         [HttpGet("{id}", Name = "GetMediaById")]
         public async Task<IActionResult> GetMediaBy(string id)
         {
-            var result = await _mediator.Send(new Query(id));
+            var result = await _mediator.Send(new FindByIdQuery(id));
 
             if(result == null)
             {
@@ -55,6 +56,14 @@ namespace HAS.Content.Controllers
 
             Response.Headers.Add("Location", url);
             return StatusCode(303, url);
+        }
+
+        [HttpGet("all/{instructorId}", Name = "FindByProfileId")]
+        public async Task<IActionResult> FindByProfileId(string instructorId)
+        {
+            var result = await _mediator.Send(new FindByProfileIdQuery(instructorId));
+
+            return Ok(result);
         }
     }
 }
