@@ -15,8 +15,9 @@ using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
 {
-    [AllowAnonymous]
+    [Authorize]
     [Route("[controller]")]
+    [ApiController]
     public class MediaController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -44,18 +45,15 @@ namespace HAS.Content.Controllers
         [RequestSizeLimit(6000000000)]
         public async Task<IActionResult> UploadMedia()
         {
-            var result = await _mediator.Send(new Command(Request));
+            var result = await _mediator.Send(new UploadAudioCommand(Request));
 
             if(string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }
 
-            // build api uri
-            string url = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/media/{result}";
-
-            Response.Headers.Add("Location", url);
-            return StatusCode(303, url);
+            Response.Headers.Add("Location", $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/media/{result}");
+            return StatusCode(303);
         }
 
         [HttpGet("all/{instructorId}", Name = "FindByProfileId")]

@@ -17,6 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static HAS.Content.Data.ContentContext;
 
 namespace HAS.Content.Feature.Media
 {
@@ -26,11 +27,11 @@ namespace HAS.Content.Feature.Media
 
         public UploadAudio(IMediator mediator) => _mediator = mediator;
 
-        public class Command : IRequest<string>
+        public class UploadAudioCommand : IRequest<string>
         {
             public HttpRequest Request { get; set; }
 
-            public Command(HttpRequest request) => Request = request;
+            public UploadAudioCommand(HttpRequest request) => Request = request;
         }
 
         public class MappingProfile : Profile
@@ -55,7 +56,7 @@ namespace HAS.Content.Feature.Media
             }
         }
 
-        public class CommandHandler : IRequestHandler<Command, string>
+        public class UploadAudioCommandHandler : IRequestHandler<UploadAudioCommand, string>
         {
             private static readonly string[] _permittedExtensions = { ".m4a" };
             private readonly long _fileSizeLimit = 6000000000;
@@ -64,14 +65,14 @@ namespace HAS.Content.Feature.Media
             private static readonly FormOptions _defaultFormOptions = new FormOptions();
             private readonly ICloudStorageService _cloudStorageService;
 
-            public CommandHandler(ContentContext db, ICloudStorageService cloudStorageservice, IConfigurationProvider configuration)
+            public UploadAudioCommandHandler(ContentContext db, ICloudStorageService cloudStorageservice, IConfigurationProvider configuration)
             {
                 _db = db;
                 _cloudStorageService = cloudStorageservice;
                 _configuration = configuration;
             }
 
-            public async Task<string> Handle(Command cmd, CancellationToken cancellationToken)
+            public async Task<string> Handle(UploadAudioCommand cmd, CancellationToken cancellationToken)
             {
                 var request = cmd.Request;
 
@@ -246,7 +247,7 @@ namespace HAS.Content.Feature.Media
                 {
                     var mapper = new Mapper(_configuration);
 
-                    var dao = mapper.Map<Data.ContentDAO>(media);
+                    var dao = mapper.Map<ContentDAO>(media);
 
                     try
                     {

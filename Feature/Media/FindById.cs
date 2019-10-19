@@ -7,6 +7,7 @@ using MongoDB.Driver;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static HAS.Content.Data.ContentContext;
 
 namespace HAS.Content.Feature.Media
 {
@@ -38,7 +39,7 @@ namespace HAS.Content.Feature.Media
             public DateTime RecordingDate { get; private set; }
             public DateTime UploadDate { get; private set; }
             public StateDetails State { get; private set; }
-            public Model.Manifest Manifest { get; private set; }
+            public Manifest Manifest { get; private set; }
         }
 
         public class MappingProfile : Profile
@@ -70,7 +71,7 @@ namespace HAS.Content.Feature.Media
             {
                 var mapper = new Mapper(_configuration);
 
-                var projection = Builders<Data.ContentDAO>.Projection.Expression(x => mapper.Map<FindByIdResult>(x));
+                var projection = Builders<ContentDAO>.Projection.Expression(x => mapper.Map<FindByIdResult>(x));
 
                 var media = await _db.Content
                                     .Find(x => x.Id == ObjectId.Parse(request.Id.ToString()))

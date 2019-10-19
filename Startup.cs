@@ -53,6 +53,7 @@ namespace HAS.Content
 
             services.AddTransient<ICloudStorageService, CloudStorageService>();
             services.AddScoped<ContentContext>();
+            services.AddScoped<LibraryContext>();
 
             services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
                 .AddIdentityServerAuthentication(options =>

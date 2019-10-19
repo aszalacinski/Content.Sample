@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using static HAS.Content.Data.ContentContext;
 
 namespace HAS.Content.Feature.Media
 {
@@ -71,7 +72,7 @@ namespace HAS.Content.Feature.Media
             {
                 var mapper = new Mapper(_configuration);
 
-                var projection = Builders<Data.ContentDAO>.Projection.Expression(x => mapper.Map<FindByProfileIdResult>(x));
+                var projection = Builders<ContentDAO>.Projection.Expression(x => mapper.Map<FindByProfileIdResult>(x));
 
                 var results = await _db.Content
                                         .Find(x => x.InstructorId == request.ProfileId)
