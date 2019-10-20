@@ -37,7 +37,7 @@ namespace HAS.Content.Feature.Library
             public string Name { get; private set; }
             public string Description { get; private set; }
             public DateTime CreateDate { get; private set; }
-            public AccessType Access { get; private set; }
+            public string Access { get; private set; }
             public IEnumerable<Model.Content> Content { get; private set; }
             public Tribe DefaultTribe { get; private set; }
             public IEnumerable<Tribe> Tribes { get; private set; }

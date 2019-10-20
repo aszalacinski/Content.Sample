@@ -11,6 +11,7 @@ using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
+using static HAS.Content.Feature.Library.SetLibraryAccess;
 
 namespace HAS.Content.Controllers
 {
@@ -84,7 +85,7 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/{hubId}/lib/{result}";
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
 
             Response.Headers.Add("Location", uri);
             return StatusCode(303);
@@ -103,6 +104,23 @@ namespace HAS.Content.Controllers
             }
 
             return Ok(result);
+        }
+
+        // Set Library Access
+        [HttpPut("{hubId}/lib/{libId}/access/{access}")]
+        public async Task<IActionResult> SetLibraryAccess(string hubId, string libId, string access)
+        {
+            var result = await _mediator.Send(new SetLibraryAccessCommand(hubId, libId, access));
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
         }
     }
 }

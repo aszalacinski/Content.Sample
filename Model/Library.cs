@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.SetLibraryAccess;
 
 namespace HAS.Content.Model
 {
@@ -28,10 +29,9 @@ namespace HAS.Content.Model
         public static Hub Create(string id, string instructorId, DateTime createDate, List<Content> content, List<Library> libraries)
             => new Hub(id, instructorId, createDate, content, libraries);
 
-        public bool Handle(CreateNewLibraryInHubCommand message)
-        {
-            return AddLibrary(message);
-        }
+        public bool Handle(CreateNewLibraryInHubCommand message) => AddLibrary(message);
+
+        public bool Handle(SetLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool AddLibrary(CreateNewLibraryInHubCommand message)
         {
@@ -45,6 +45,12 @@ namespace HAS.Content.Model
             }
             return false;
         }
+
+        #region Utilities
+
+        private Library GetLibrary(string libraryId) => Libraries.ToList().Where(x => x.Id == libraryId).FirstOrDefault();
+
+        #endregion
     }
 
     public class Content
@@ -91,6 +97,30 @@ namespace HAS.Content.Model
 
         public static Library Create(string name, string description, DateTime createDate, AccessType access, IEnumerable<Content> content, Tribe defaultTribe, IEnumerable<Tribe> tribes)
             => new Library(name, description, createDate, access, content, defaultTribe, tribes);
+
+        public bool Handle(SetLibraryAccessCommand cmd)
+        {
+            switch(cmd.Access.ToUpper())
+            {
+                case "PRIVATE":
+                    return SetAccessToPrivate();
+                case "PUBLIC":
+                default:
+                    return SetAccessToPublic();
+            }
+        }
+
+        private bool SetAccessToPrivate()
+        {
+            Access = AccessType.PRIVATE;
+            return Access.Equals(AccessType.PRIVATE);
+        }
+
+        private bool SetAccessToPublic()
+        {
+            Access = AccessType.PUBLIC;
+            return Access.Equals(AccessType.PUBLIC);
+        }
     }
 
     public class Tribe
