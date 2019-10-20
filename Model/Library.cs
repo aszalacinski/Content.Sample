@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
+using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
 namespace HAS.Content.Model
 {
@@ -35,6 +36,8 @@ namespace HAS.Content.Model
         public bool Handle(SetLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(AddTribeToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(SetLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool AddLibrary(CreateNewLibraryInHubCommand message)
         {
@@ -115,15 +118,90 @@ namespace HAS.Content.Model
 
         public bool Handle(AddTribeToLibraryCommand cmd)
         {
-            if(!Tribes.Any(x => x.Id.Equals(cmd.TribeId))) 
+            return AddTribeToLibrary(cmd.LibraryId);
+        }
+
+        public bool Handle(SetLibraryDefaultTribeCommand cmd)
+        {
+            return SetDefaultTribe(cmd.TribeId);
+        }
+
+        private bool SetDefaultTribe(string tribeId)
+        {
+            if(Tribes.Any(x => x.Id.Equals(tribeId)))
+            {
+                if(!IsDefault(tribeId))
+                {
+                    var list = Tribes.ToList();
+                    var tribe = list.Where(x => x.Id == tribeId).FirstOrDefault();
+
+                    if(tribe.Equals(null))
+                    {
+                        var add = AddTribe(tribeId);
+                    }
+
+                    DefaultTribe = Tribes.Where(x => x.Id == tribeId).FirstOrDefault();
+                }
+            }
+
+            return DefaultTribe.Id == tribeId;
+        }
+
+        private bool AddTribe(string tribeId)
+        {
+            if (!Tribes.Any(x => x.Id.Equals(tribeId)))
             {
                 var list = this.Tribes.ToList();
-                var newTribe = Tribe.Create(cmd.TribeId, DateTime.UtcNow);
+
+                var newTribe = Tribe.Create(tribeId, DateTime.UtcNow);
                 list.Add(newTribe);
                 this.Tribes = list;
             }
 
-            return Tribes.Any(x => x.Id == cmd.TribeId);
+            return Tribes.Any(x => x.Id == tribeId);
+        }
+
+        private bool RemoveTribe(string tribeId)
+        {
+            if (Tribes.Any(x => x.Id.Equals(tribeId)))
+            {
+                if (!IsDefault(tribeId))
+                {
+                    var list = this.Tribes.ToList();
+                    var tribe = list.Where(x => x.Id == tribeId).FirstOrDefault();
+                    if (list.Remove(tribe))
+                    {
+                        this.Tribes = list;
+                    }
+                }
+            }
+
+            return Tribes.Any(x => x.Id == tribeId);
+        }
+
+        private bool IsDefault(string tribeId)
+        {
+            if(DefaultTribe != null)
+            {
+                return DefaultTribe.Id == tribeId;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool AddTribeToLibrary(string tribeId)
+        {
+            if (!Tribes.Any(x => x.Id.Equals(tribeId)))
+            {
+                var list = this.Tribes.ToList();
+                var newTribe = Tribe.Create(tribeId, DateTime.UtcNow);
+                list.Add(newTribe);
+                this.Tribes = list;
+            }
+
+            return Tribes.Any(x => x.Id == tribeId);
         }
 
         private bool SetAccessToPrivate()

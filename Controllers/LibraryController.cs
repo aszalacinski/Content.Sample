@@ -13,6 +13,7 @@ using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
+using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
 namespace HAS.Content.Controllers
 {
@@ -129,6 +130,23 @@ namespace HAS.Content.Controllers
         public async Task<IActionResult> AddTribeToLibrary(string hubId, string libId, string tribeId)
         {
             var result = await _mediator.Send(new AddTribeToLibraryCommand(hubId, libId, tribeId));
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
+        }
+
+        // Set Library Default Tribe
+        [HttpPut("{hubId}/lib/{libId}/tribe/default/{tribeId}", Name = "Set Library to Default Tribe")]
+        public async Task<IActionResult> SetLibraryDefaultTribe(string hubId, string libId, string tribeId)
+        {
+            var result = await _mediator.Send(new SetLibraryDefaultTribeCommand(hubId, libId, tribeId));
 
             if (result == null)
             {
