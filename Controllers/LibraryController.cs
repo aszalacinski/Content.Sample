@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static HAS.Content.Feature.Library.CreateLibraryHub;
+using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
+using static HAS.Content.Feature.Library.GetLibraryById;
 
 namespace HAS.Content.Controllers
 {
@@ -62,6 +64,40 @@ namespace HAS.Content.Controllers
             var result = await _mediator.Send(new GetHubByProfileIdQuery(profileId));
 
             if(result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        // Add Library to Hub
+        [HttpPost("{hubId}/lib", Name = "AddLibraryToHub")]
+        public async Task<IActionResult> AddLibraryToHub(string hubId, [FromBody] CreateNewLibraryInHubCommand details)
+        {
+            details.HubId = hubId;
+
+            var result = await _mediator.Send(details);
+
+            if(result == null)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
+        }
+
+
+        // Get Library By Id
+        [HttpGet("{hubId}/lib/{libId}", Name = "GetLibraryById")]
+        public async Task<IActionResult> GetLibraryById(string hubId, string libId)
+        {
+            var result = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+
+            if (result == null)
             {
                 return NotFound();
             }

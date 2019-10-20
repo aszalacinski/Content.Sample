@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 
 namespace HAS.Content.Model
 {
@@ -26,6 +27,24 @@ namespace HAS.Content.Model
 
         public static Hub Create(string id, string instructorId, DateTime createDate, List<Content> content, List<Library> libraries)
             => new Hub(id, instructorId, createDate, content, libraries);
+
+        public bool Handle(CreateNewLibraryInHubCommand message)
+        {
+            return AddLibrary(message);
+        }
+
+        private bool AddLibrary(CreateNewLibraryInHubCommand message)
+        {
+            if(!Libraries.Any(x => x.Name.Equals(message.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                var list = Libraries.ToList();
+                var lib = Library.Create(message.Name, message.Description, DateTime.UtcNow, AccessType.PUBLIC, new List<Content>(), null, new List<Tribe>());
+                list.Add(lib);
+                Libraries = list;
+                return true;
+            }
+            return false;
+        }
     }
 
     public class Content
