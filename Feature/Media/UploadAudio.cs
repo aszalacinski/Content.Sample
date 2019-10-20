@@ -34,42 +34,24 @@ namespace HAS.Content.Feature.Media
             public UploadAudioCommand(HttpRequest request) => Request = request;
         }
 
-        public class MappingProfile : Profile
-        {
-            public MappingProfile()
-            {
-                CreateMap<Manifest, ManifestDAO>().ReverseMap();
-                CreateMap<Model.Media, ContentDAO>()
-                    .ForMember(m => m.Id, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Id) ? ObjectId.GenerateNewId() : ObjectId.Parse(src.Id)))
-                    .ForMember(m => m.Title, opt => opt.MapFrom(src => src.ContentDetails.Title))
-                    .ForMember(m => m.Description, opt => opt.MapFrom(src => src.ContentDetails.Description))
-                    .ForMember(m => m.Duration, opt => opt.MapFrom(src => src.ContentDetails.Duration))
-                    .ForMember(m => m.Size, opt => opt.MapFrom(src => src.ContentDetails.Size))
-                    .ForMember(m => m.LikeScore, opt => opt.MapFrom(src => src.ContentDetails.LikeScore))
-                    .ForMember(m => m.Tags, opt => opt.MapFrom(src => src.ContentDetails.Tags))
-                    .ForMember(m => m.Status, opt => opt.MapFrom(src => src.State.Status))
-                    .ForMember(m => m.Published, opt => opt.MapFrom(src => src.State.Published))
-                    .ForMember(m => m.Staged, opt => opt.MapFrom(src => src.State.Staged))
-                    .ForMember(m => m.Archived, opt => opt.MapFrom(src => src.State.Archived))
-                    .ReverseMap();
-
-            }
-        }
-
         public class UploadAudioCommandHandler : IRequestHandler<UploadAudioCommand, string>
         {
             private static readonly string[] _permittedExtensions = { ".m4a" };
             private readonly long _fileSizeLimit = 6000000000;
             private readonly ContentContext _db;
-            private readonly IConfigurationProvider _configuration;
             private static readonly FormOptions _defaultFormOptions = new FormOptions();
             private readonly ICloudStorageService _cloudStorageService;
+            private readonly MapperConfiguration _mapperConfiguration;
 
-            public UploadAudioCommandHandler(ContentContext db, ICloudStorageService cloudStorageservice, IConfigurationProvider configuration)
+            public UploadAudioCommandHandler(ContentContext db, ICloudStorageService cloudStorageservice)
             {
                 _db = db;
                 _cloudStorageService = cloudStorageservice;
-                _configuration = configuration;
+
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+                    cfg.AddProfile<ContentDAOProfile>();
+                });
             }
 
             public async Task<string> Handle(UploadAudioCommand cmd, CancellationToken cancellationToken)
@@ -245,7 +227,7 @@ namespace HAS.Content.Feature.Media
                 // upload to MongoDB
                 if (!blobCreatedResult.Error)
                 {
-                    var mapper = new Mapper(_configuration);
+                    var mapper = new Mapper(_mapperConfiguration);
 
                     var dao = mapper.Map<ContentDAO>(media);
 

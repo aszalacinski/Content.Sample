@@ -15,7 +15,7 @@ using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
 {
-    [Authorize]
+    [AllowAnonymous]
     [Route("[controller]")]
     [ApiController]
     public class MediaController : ControllerBase

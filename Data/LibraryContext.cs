@@ -76,7 +76,7 @@ namespace HAS.Content.Data
 
             [BsonElement("access")]
             [BsonRepresentation(BsonType.String)]
-            public AccessType Access { get; set; }
+            public string Access { get; set; }
             
             [BsonElement("ctent")]
             public IEnumerable<ContentDAO> Content { get; set; }

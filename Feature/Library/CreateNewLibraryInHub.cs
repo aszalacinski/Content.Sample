@@ -33,36 +33,25 @@ namespace HAS.Content.Feature.Library
             public string Description { get; set; }
 
         }
-
-        public class MappingProfile : Profile
-        {
-            public MappingProfile() 
-            {
-                CreateMap<GetHubByIdResult, Hub>()
-                    .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
-                    .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
-
-                CreateMap<Tribe, TribeDAO>();
-                CreateMap<Model.Content, ContentDAO>();
-                CreateMap<Model.Library, LibraryDAO>()
-                    .ForMember(m => m.Id, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Id) ? ObjectId.GenerateNewId() : ObjectId.Parse(src.Id)));
-                CreateMap<Hub, HubDAO>()
-                    .ForMember(m => m.Id, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Id) ? ObjectId.GenerateNewId() : ObjectId.Parse(src.Id)))
-                    .ReverseMap();
-            }
-        }
-
+        
         public class CreateNewLibraryInHubCommandHandler : IRequestHandler<CreateNewLibraryInHubCommand, string>
         {
             public readonly LibraryContext _db;
-            private readonly IConfigurationProvider _configuration;
+            private readonly MapperConfiguration _mapperConfiguration;
             private readonly IMediator _mediator;
 
-            public CreateNewLibraryInHubCommandHandler(LibraryContext db, IConfigurationProvider configuration, IMediator mediator)
+            public CreateNewLibraryInHubCommandHandler(LibraryContext db, IMediator mediator)
             {
                 _db = db;
-                _configuration = configuration;
                 _mediator = mediator;
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+                    cfg.AddProfile<LibraryDAOProfile>();
+
+                    cfg.CreateMap<GetHubByIdResult, Hub>()
+                        .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
+                        .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
+                });
             }
 
             public async Task<string> Handle(CreateNewLibraryInHubCommand cmd, CancellationToken cancellationToken)
@@ -70,7 +59,7 @@ namespace HAS.Content.Feature.Library
 
                 var result = await _mediator.Send(new GetHubByIdQuery(cmd.HubId));
 
-                var mapper = new Mapper(_configuration);
+                var mapper = new Mapper(_mapperConfiguration);
 
                 Hub hub = mapper.Map<Hub>(result);
 

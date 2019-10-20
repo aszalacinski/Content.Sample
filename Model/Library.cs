@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 
@@ -32,6 +33,8 @@ namespace HAS.Content.Model
         public bool Handle(CreateNewLibraryInHubCommand message) => AddLibrary(message);
 
         public bool Handle(SetLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(AddTribeToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool AddLibrary(CreateNewLibraryInHubCommand message)
         {
@@ -108,6 +111,19 @@ namespace HAS.Content.Model
                 default:
                     return SetAccessToPublic();
             }
+        }
+
+        public bool Handle(AddTribeToLibraryCommand cmd)
+        {
+            if(!Tribes.Any(x => x.Id.Equals(cmd.TribeId))) 
+            {
+                var list = this.Tribes.ToList();
+                var newTribe = Tribe.Create(cmd.TribeId, DateTime.UtcNow);
+                list.Add(newTribe);
+                this.Tribes = list;
+            }
+
+            return Tribes.Any(x => x.Id == cmd.TribeId);
         }
 
         private bool SetAccessToPrivate()

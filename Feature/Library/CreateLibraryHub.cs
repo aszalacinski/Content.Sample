@@ -25,35 +25,25 @@ namespace HAS.Content.Feature.Library
             public CreateLibraryHubCommand(string instructorId) => InstructorId = instructorId;
         }
 
-        public class MappingProfile : Profile
-        {
-            public MappingProfile()
-            {
-                CreateMap<Tribe, TribeDAO>().ReverseMap();
-                CreateMap<Model.Content, ContentDAO>().ReverseMap();
-                CreateMap<Model.Library, LibraryDAO>().ReverseMap();
-                CreateMap<Hub, HubDAO>()
-                    .ForMember(m => m.Id, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Id) ? ObjectId.GenerateNewId() : ObjectId.Parse(src.Id)))
-                    .ReverseMap();
-            }
-        }
-
         public class CreateLibraryHubCommandHandler : IRequestHandler<CreateLibraryHubCommand, string>
         {
             public readonly LibraryContext _db;
-            private readonly IConfigurationProvider _configuration;
+            private readonly MapperConfiguration _mapperConfiguration;
 
-            public CreateLibraryHubCommandHandler(LibraryContext db, IConfigurationProvider configuration)
+            public CreateLibraryHubCommandHandler(LibraryContext db)
             {
-                _db = db;
-                _configuration = configuration;
+                _db = db; 
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+                    cfg.AddProfile<LibraryDAOProfile>();
+                });
             }
 
             public async Task<string> Handle(CreateLibraryHubCommand cmd, CancellationToken cancellationToken)
             {
                 var hub = Hub.Create(string.Empty, cmd.InstructorId, DateTime.UtcNow, new List<Model.Content>(), new List<Model.Library>());
 
-                var mapper = new Mapper(_configuration);
+                var mapper = new Mapper(_mapperConfiguration);
 
                 var dao = mapper.Map<HubDAO>(hub);
 
@@ -66,7 +56,7 @@ namespace HAS.Content.Feature.Library
                     return string.Empty;
                 }
 
-                return dao.InstructorId.ToString();
+                return dao.Id.ToString();
             }
         }
     }

@@ -34,37 +34,27 @@ namespace HAS.Content.Feature.Library
             public IEnumerable<Model.Content> Content { get; private set; }
             public IEnumerable<Model.Library> Libraries { get; private set; }
         }
-
-        public class MappingProfile : Profile
-        {
-            public MappingProfile()
-            {
-                CreateMap<TribeDAO, Tribe>();
-                CreateMap<ContentDAO, Model.Content>();
-                CreateMap<LibraryDAO, Model.Library>()
-                    .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
-                    .ForMember(m => m.DefaultTribe, opt => opt.MapFrom(src => src.DefaultTribe))
-                    .ForMember(m => m.Tribes, opt => opt.MapFrom(src => src.Tribes));
-                CreateMap<HubDAO, GetHubByIdResult>()
-                    .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
-                    .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
-            }
-        }
-
+        
         public class GetHubByProfileIdQueryHandler : IRequestHandler<GetHubByIdQuery, GetHubByIdResult>
         {
             private readonly LibraryContext _db;
-            private readonly IConfigurationProvider _configuration;
+            private readonly MapperConfiguration _mapperConfiguration;
 
-            public GetHubByProfileIdQueryHandler(LibraryContext db, IConfigurationProvider configuration)
+            public GetHubByProfileIdQueryHandler(LibraryContext db)
             {
                 _db = db;
-                _configuration = configuration;
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+                    cfg.AddProfile<LibraryProfile>();
+                    cfg.CreateMap<HubDAO, GetHubByIdResult>()
+                        .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
+                        .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
+                });
             }
 
             public async Task<GetHubByIdResult> Handle(GetHubByIdQuery request, CancellationToken cancellationToken)
             {
-                var mapper = new Mapper(_configuration);
+                var mapper = new Mapper(_mapperConfiguration);
 
                 var projection = Builders<HubDAO>.Projection.Expression(x => mapper.Map<GetHubByIdResult>(x));
 

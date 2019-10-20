@@ -42,34 +42,28 @@ namespace HAS.Content.Feature.Library
             public Tribe DefaultTribe { get; private set; }
             public IEnumerable<Tribe> Tribes { get; private set; }
         }
-
-        public class MappingProfile : Profile
-        {
-            public MappingProfile()
-            {
-                CreateMap<TribeDAO, Tribe>();
-                CreateMap<ContentDAO, Model.Content>();
-                CreateMap<LibraryDAO, GetLibraryByIdResult>()
-                    .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
-                    .ForMember(m => m.DefaultTribe, opt => opt.MapFrom(src => src.DefaultTribe))
-                    .ForMember(m => m.Tribes, opt => opt.MapFrom(src => src.Tribes));
-            }
-        }
-
+        
         public class GetHubByProfileIdQueryHandler : IRequestHandler<GetLibraryByIdQuery, GetLibraryByIdResult>
         {
             private readonly LibraryContext _db;
-            private readonly IConfigurationProvider _configuration;
+            private readonly MapperConfiguration _mapperConfiguration;
 
-            public GetHubByProfileIdQueryHandler(LibraryContext db, IConfigurationProvider configuration)
+            public GetHubByProfileIdQueryHandler(LibraryContext db)
             {
                 _db = db;
-                _configuration = configuration;
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+                    cfg.AddProfile<LibraryProfile>();
+                    cfg.CreateMap<LibraryDAO, GetLibraryByIdResult>()
+                        .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
+                        .ForMember(m => m.DefaultTribe, opt => opt.MapFrom(src => src.DefaultTribe))
+                        .ForMember(m => m.Tribes, opt => opt.MapFrom(src => src.Tribes));
+                });
             }
 
             public async Task<GetLibraryByIdResult> Handle(GetLibraryByIdQuery request, CancellationToken cancellationToken)
             {
-                var mapper = new Mapper(_configuration);
+                var mapper = new Mapper(_mapperConfiguration);
 
                 var projection = Builders<HubDAO>.Projection.Expression(x => mapper.Map<GetLibraryByIdResult>(x.Libraries.Where(y => y.Id == ObjectId.Parse(request.LibraryId)).FirstOrDefault()));
 

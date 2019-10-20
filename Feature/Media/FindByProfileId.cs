@@ -43,34 +43,28 @@ namespace HAS.Content.Feature.Media
             public Model.Manifest Manifest { get; private set; }
         }
 
-        public class MappingProfile : Profile
-        {
-            public MappingProfile()
-            {
-                CreateMap<ContentDAO, ContentDetails>();
-                CreateMap<ContentDAO, StateDetails>();
-                CreateMap<ContentDAO, Manifest>();
-                CreateMap<ContentDAO, FindByProfileIdResult>()
-                    .ForMember(m => m.ContentDetails, opt => opt.MapFrom(src => src))
-                    .ForMember(m => m.State, opt => opt.MapFrom(src => src))
-                    .ForMember(m => m.Manifest, opt => opt.MapFrom(src => src));
-            }
-        }
-
         public class FindByProfileIdQueryHandler : IRequestHandler<FindByProfileIdQuery, IEnumerable<FindByProfileIdResult>>
         {
             private readonly ContentContext _db;
-            private readonly IConfigurationProvider _configuration;
+            private readonly MapperConfiguration _mapperConfiguration;
 
-            public FindByProfileIdQueryHandler(ContentContext db, IConfigurationProvider configuration)
+            public FindByProfileIdQueryHandler(ContentContext db)
             {
                 _db = db;
-                _configuration = configuration;
+                _mapperConfiguration = new MapperConfiguration(cfg =>
+                {
+
+                    cfg.AddProfile<ContentProfile>();
+                    cfg.CreateMap<ContentDAO, FindByProfileIdResult>()
+                            .ForMember(m => m.ContentDetails, opt => opt.MapFrom(src => src))
+                            .ForMember(m => m.State, opt => opt.MapFrom(src => src))
+                            .ForMember(m => m.Manifest, opt => opt.MapFrom(src => src));
+                });
             }
 
             public async Task<IEnumerable<FindByProfileIdResult>> Handle(FindByProfileIdQuery request, CancellationToken cancellationToken)
             {
-                var mapper = new Mapper(_configuration);
+                var mapper = new Mapper(_mapperConfiguration);
 
                 var projection = Builders<ContentDAO>.Projection.Expression(x => mapper.Map<FindByProfileIdResult>(x));
 
