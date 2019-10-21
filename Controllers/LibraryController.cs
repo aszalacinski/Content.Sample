@@ -12,6 +12,7 @@ using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
 using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
+using static HAS.Content.Feature.Library.GetLibraryByName;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
@@ -154,6 +155,23 @@ namespace HAS.Content.Controllers
             }
 
             var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
+        }
+
+        // Get Library By Name
+        [HttpGet("{profileId}/lib/name/{name}", Name = "Get Library By Name")]
+        public async Task<IActionResult> GetLibraryByName(string profileId, string name)
+        {
+            var result = await _mediator.Send(new GetLibraryByNameQuery(profileId, name));
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{result.HubId}/lib/{result.LibraryId}";
 
             Response.Headers.Add("Location", uri);
             return StatusCode(303);
