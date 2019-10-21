@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
@@ -38,6 +40,10 @@ namespace HAS.Content.Model
         public bool Handle(AddTribeToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(SetLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(AddContentToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(RemoveContentFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool AddLibrary(CreateNewLibraryInHubCommand message)
         {
@@ -124,6 +130,46 @@ namespace HAS.Content.Model
         public bool Handle(SetLibraryDefaultTribeCommand cmd)
         {
             return SetDefaultTribe(cmd.TribeId);
+        }
+
+        public bool Handle(AddContentToLibraryCommand cmd)
+        {
+            return AddContentToLibrary(cmd.MediaId);
+        }
+
+        public bool Handle(RemoveContentFromLibraryCommand cmd)
+        {
+            return RemoveContentFromLibrary(cmd.MediaId);
+        }
+
+        private bool RemoveContentFromLibrary(string mediaId)
+        {
+            if (Content.Any(x => x.Id == mediaId))
+            {
+                var list = Content.ToList();
+                var content = list.Where(x => x.Id == mediaId).FirstOrDefault();
+                if (list.Remove(content))
+                {
+                    this.Content = list;
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        private bool AddContentToLibrary(string mediaId)
+        {
+            if (!Content.Any(x => x.Id == mediaId))
+            {
+                var newContent = Model.Content.Create(mediaId, DateTime.UtcNow);
+                var list = Content.ToList();
+                list.Add(newContent);
+                this.Content = list;
+                return true;
+            }
+
+            return true;
         }
 
         private bool SetDefaultTribe(string tribeId)

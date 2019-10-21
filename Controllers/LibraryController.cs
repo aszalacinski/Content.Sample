@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateLibraryHub;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
@@ -14,6 +15,7 @@ using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Library.GetLibraryByName;
 using static HAS.Content.Feature.Library.GetLibraryContent;
+using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
@@ -190,6 +192,40 @@ namespace HAS.Content.Controllers
             }
 
             return Ok(result);
+        }
+
+        // Add Library Content
+        [HttpPut("{hubId}/lib/{libId}/content/{contentId}", Name = "Add Content To Library")]
+        public async Task<IActionResult> AddContentToLibrary(string hubId, string libId, string contentId)
+        {
+            var result = await _mediator.Send(new AddContentToLibraryCommand(hubId, libId, contentId));
+
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{libId}/content";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
+        }
+
+        // Remove Content from Library
+        [HttpDelete("{hubId}/lib/{libId}/content/{contentId}", Name = "Remove Content from Library")]
+        public async Task<IActionResult> RemoveLibraryContent(string hubId, string libId, string contentId)
+        {
+            var result = await _mediator.Send(new RemoveContentFromLibraryCommand(hubId, libId, contentId));
+
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{libId}/content";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
         }
     }
 }
