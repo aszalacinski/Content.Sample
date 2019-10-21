@@ -1,16 +1,10 @@
-﻿using AutoMapper;
-using HAS.Content.Data;
-using HAS.Content.Model;
+﻿using HAS.Content.Data;
 using MediatR;
-using MongoDB.Bson;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static HAS.Content.Data.LibraryContext;
-using static HAS.Content.Feature.Library.GetHubByProfileId;
 
 namespace HAS.Content.Feature.Library
 {

@@ -13,6 +13,7 @@ using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Library.GetLibraryByName;
+using static HAS.Content.Feature.Library.GetLibraryContent;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
 
@@ -175,6 +176,20 @@ namespace HAS.Content.Controllers
 
             Response.Headers.Add("Location", uri);
             return StatusCode(303);
+        }
+
+        // Get Library Content
+        [HttpGet("{hubId}/lib/{libId}/content", Name = "Get Library Content")]
+        public async Task<IActionResult> GetLibraryContent(string hubId, string libId)
+        {
+            var result = await _mediator.Send(new GetLibraryContentQuery(hubId, libId));
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
         }
     }
 }
