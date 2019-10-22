@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
@@ -33,7 +34,7 @@ namespace HAS.Content.Model
         public static Hub Create(string id, string instructorId, DateTime createDate, List<Content> content, List<Library> libraries)
             => new Hub(id, instructorId, createDate, content, libraries);
 
-        public bool Handle(CreateNewLibraryInHubCommand message) => AddLibrary(message);
+        public bool Handle(CreateNewLibraryInHubCommand cmd) => AddLibrary(cmd);
 
         public bool Handle(SetLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
@@ -45,12 +46,34 @@ namespace HAS.Content.Model
 
         public bool Handle(RemoveContentFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
-        private bool AddLibrary(CreateNewLibraryInHubCommand message)
+        public bool Handle(DeleteLibraryFromHubCommand cmd) => DeleteLibrary(cmd);
+
+        private bool DeleteLibrary(DeleteLibraryFromHubCommand cmd)
         {
-            if(!Libraries.Any(x => x.Name.Equals(message.Name, StringComparison.OrdinalIgnoreCase)))
+            if (Libraries.Any(x => x.Id.Equals(cmd.LibraryId)))
             {
                 var list = Libraries.ToList();
-                var lib = Library.Create(message.Name, message.Description, DateTime.UtcNow, AccessType.PUBLIC, new List<Content>(), null, new List<Tribe>());
+                var lib = list.Where(x => x.Id.Equals(cmd.LibraryId)).FirstOrDefault();
+                if (list.Contains(lib))
+                {
+                    if (list.Remove(lib))
+                    {
+                        this.Libraries = list;
+                        return true;
+                    }
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        }
+
+        private bool AddLibrary(CreateNewLibraryInHubCommand cmd)
+        {
+            if(!Libraries.Any(x => x.Name.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                var list = Libraries.ToList();
+                var lib = Library.Create(cmd.Name, cmd.Description, DateTime.UtcNow, AccessType.PUBLIC, new List<Content>(), null, new List<Tribe>());
                 list.Add(lib);
                 Libraries = list;
                 return true;

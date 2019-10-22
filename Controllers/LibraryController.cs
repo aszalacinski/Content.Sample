@@ -10,6 +10,7 @@ using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateLibraryHub;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.DeleteLibraryHub;
 using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
@@ -242,6 +243,20 @@ namespace HAS.Content.Controllers
 
             return BadRequest($"No library hubs were deleted");
 
+        }
+
+        // Delete Library from Hub
+        [HttpDelete("{hubId}/lib/{libId}", Name = "Delete Library from Hub")]
+        public async Task<IActionResult> DeleteLibraryFromHub(string hubId, string libId)
+        {
+            var result = await _mediator.Send(new DeleteLibraryFromHubCommand(hubId, libId));
+
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
         }
     }
 }
