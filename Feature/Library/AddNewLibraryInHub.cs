@@ -14,47 +14,43 @@ using static HAS.Content.Feature.Library.GetHubById;
 
 namespace HAS.Content.Feature.Library
 {
-    public class SetLibraryDefaultTribe
+    public class AddNewLibraryInHub
     {
         private readonly IMediator _mediator;
 
-        public SetLibraryDefaultTribe(IMediator mediator) => _mediator = mediator;
-
-        public class SetLibraryDefaultTribeCommand : IRequest<string>
+        public AddNewLibraryInHub(IMediator mediator) => _mediator = mediator;
+        
+        public class AddNewLibraryInHubCommand : IRequest<string>
         {
             public string HubId { get; set; }
-            public string LibraryId { get; set; }
-            public string TribeId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
 
-            public SetLibraryDefaultTribeCommand(string hubId, string libraryId, string tribeId)
-            {
-                HubId = hubId;
-                LibraryId = libraryId;
-                TribeId = tribeId;
-            }
         }
-
-        public class SetLibraryDefaultTribeCommandHandler : IRequestHandler<SetLibraryDefaultTribeCommand, string>
+        
+        public class AddNewLibraryInHubCommandHandler : IRequestHandler<AddNewLibraryInHubCommand, string>
         {
             public readonly LibraryContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
             private readonly IMediator _mediator;
 
-            public SetLibraryDefaultTribeCommandHandler(LibraryContext db, IMediator mediator)
+            public AddNewLibraryInHubCommandHandler(LibraryContext db, IMediator mediator)
             {
                 _db = db;
                 _mediator = mediator;
                 _mapperConfiguration = new MapperConfiguration(cfg =>
                 {
                     cfg.AddProfile<LibraryDAOProfile>();
+
                     cfg.CreateMap<GetHubByIdResult, Hub>()
                         .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
                         .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
                 });
             }
 
-            public async Task<string> Handle(SetLibraryDefaultTribeCommand cmd, CancellationToken cancellationToken)
+            public async Task<string> Handle(AddNewLibraryInHubCommand cmd, CancellationToken cancellationToken)
             {
+
                 var result = await _mediator.Send(new GetHubByIdQuery(cmd.HubId));
 
                 var mapper = new Mapper(_mapperConfiguration);
@@ -72,10 +68,10 @@ namespace HAS.Content.Feature.Library
 
                         var update = await _db.Library.FindOneAndReplaceAsync(filter, dao, options);
 
-                        return update.Libraries.Where(x => x.Id == ObjectId.Parse(cmd.LibraryId)).FirstOrDefault().Id.ToString();
+                        return update.Libraries.Where(x => x.Name.Equals(cmd.Name) && x.Description.Equals(cmd.Description)).FirstOrDefault().Id.ToString();
 
                     }
-                    catch (Exception)
+                    catch(Exception)
                     {
                         return string.Empty;
                     }
@@ -83,7 +79,9 @@ namespace HAS.Content.Feature.Library
                 }
 
                 return string.Empty;
+                
             }
         }
+
     }
 }

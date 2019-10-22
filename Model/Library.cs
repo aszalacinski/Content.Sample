@@ -4,13 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
-using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.AddNewLibraryInHub;
 using static HAS.Content.Feature.Library.DeleteLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.DeleteTribeFromLibrary;
-using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
-using static HAS.Content.Feature.Library.SetLibraryAccess;
-using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
+using static HAS.Content.Feature.Library.DeleteContentFromLibrary;
+using static HAS.Content.Feature.Library.UpdateLibraryAccess;
+using static HAS.Content.Feature.Library.UpdateLibraryDefaultTribe;
+using static HAS.Content.Feature.Library.UpdateLibraryInHub;
 
 namespace HAS.Content.Model
 {
@@ -36,23 +37,25 @@ namespace HAS.Content.Model
         public static Hub Create(string id, string instructorId, DateTime createDate, List<Content> content, List<Library> libraries)
             => new Hub(id, instructorId, createDate, content, libraries);
 
-        public bool Handle(CreateNewLibraryInHubCommand cmd) => AddLibrary(cmd);
+        public bool Handle(AddNewLibraryInHubCommand cmd) => AddLibrary(cmd);
 
-        public bool Handle(SetLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+        public bool Handle(UpdateLibraryAccessCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(AddTribeToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
-        public bool Handle(SetLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+        public bool Handle(UpdateLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(AddContentToLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
-        public bool Handle(RemoveContentFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+        public bool Handle(DeleteContentFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(DeleteLibraryFromHubCommand cmd) => DeleteLibrary(cmd);
 
         public bool Handle(DeleteTribeFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(DeleteLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(UpdateLibraryInHubCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool DeleteLibrary(DeleteLibraryFromHubCommand cmd)
         {
@@ -74,7 +77,7 @@ namespace HAS.Content.Model
             return true;
         }
 
-        private bool AddLibrary(CreateNewLibraryInHubCommand cmd)
+        private bool AddLibrary(AddNewLibraryInHubCommand cmd)
         {
             if(!Libraries.Any(x => x.Name.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)))
             {
@@ -86,6 +89,7 @@ namespace HAS.Content.Model
             }
             return false;
         }
+
 
         #region Utilities
 
@@ -139,7 +143,7 @@ namespace HAS.Content.Model
         public static Library Create(string name, string description, DateTime createDate, AccessType access, IEnumerable<Content> content, Tribe defaultTribe, IEnumerable<Tribe> tribes)
             => new Library(name, description, createDate, access, content, defaultTribe, tribes);
 
-        public bool Handle(SetLibraryAccessCommand cmd)
+        public bool Handle(UpdateLibraryAccessCommand cmd)
         {
             switch(cmd.Access.ToUpper())
             {
@@ -156,7 +160,7 @@ namespace HAS.Content.Model
             return AddTribeToLibrary(cmd.LibraryId);
         }
 
-        public bool Handle(SetLibraryDefaultTribeCommand cmd)
+        public bool Handle(UpdateLibraryDefaultTribeCommand cmd)
         {
             return SetDefaultTribe(cmd.TribeId);
         }
@@ -166,7 +170,7 @@ namespace HAS.Content.Model
             return AddContentToLibrary(cmd.MediaId);
         }
 
-        public bool Handle(RemoveContentFromLibraryCommand cmd)
+        public bool Handle(DeleteContentFromLibraryCommand cmd)
         {
             return RemoveContentFromLibrary(cmd.MediaId);
         }
@@ -179,6 +183,14 @@ namespace HAS.Content.Model
         public bool Handle(DeleteLibraryDefaultTribeCommand cmd)
         {
             return DeleteLibraryDefaultTribe();
+        }
+
+        public bool Handle(UpdateLibraryInHubCommand cmd)
+        {
+            Name = cmd.Name;
+            Description = cmd.Description;
+
+            return Name.ToUpper() == cmd.Name.ToUpper() && Description.ToUpper() == cmd.Description.ToUpper();
         }
 
         private bool DeleteLibraryDefaultTribe()

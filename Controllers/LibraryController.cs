@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
-using static HAS.Content.Feature.Library.CreateLibraryHub;
-using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.AddLibraryHub;
+using static HAS.Content.Feature.Library.AddNewLibraryInHub;
 using static HAS.Content.Feature.Library.DeleteLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.DeleteLibraryHub;
@@ -19,9 +19,10 @@ using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Library.GetLibraryByName;
 using static HAS.Content.Feature.Library.GetLibraryContent;
-using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
-using static HAS.Content.Feature.Library.SetLibraryAccess;
-using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
+using static HAS.Content.Feature.Library.DeleteContentFromLibrary;
+using static HAS.Content.Feature.Library.UpdateLibraryAccess;
+using static HAS.Content.Feature.Library.UpdateLibraryDefaultTribe;
+using static HAS.Content.Feature.Library.UpdateLibraryInHub;
 
 namespace HAS.Content.Controllers
 {
@@ -41,7 +42,7 @@ namespace HAS.Content.Controllers
         [HttpPost("{profileId}", Name="Create Library Hub")]
         public async Task<IActionResult> CreateLibraryHub(string profileid)
         {
-            var result = await _mediator.Send(new CreateLibraryHubCommand(profileid));
+            var result = await _mediator.Send(new AddLibraryHubCommand(profileid));
 
             if(string.IsNullOrEmpty(result))
             {
@@ -84,13 +85,13 @@ namespace HAS.Content.Controllers
 
         // Add Library to Hub
         [HttpPost("{hubId}/lib", Name = "Add Library To Hub")]
-        public async Task<IActionResult> AddLibraryToHub(string hubId, [FromBody] CreateNewLibraryInHubCommand details)
+        public async Task<IActionResult> AddLibraryToHub(string hubId, [FromBody] AddNewLibraryInHubCommand details)
         {
             details.HubId = hubId;
 
             var result = await _mediator.Send(details);
 
-            if(result == null)
+            if(string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }
@@ -101,6 +102,25 @@ namespace HAS.Content.Controllers
             return StatusCode(303);
         }
 
+        // Update Library in Hub
+        [HttpPut("{hubId}/lib/{libId}/details", Name = "Update Library in Hub")]
+        public async Task<IActionResult> UpdateLibraryInHub(string hubId, string libId, [FromBody] UpdateLibraryInHubCommand details)
+        {
+            details.HubId = hubId;
+            details.LibraryId = libId;
+
+            var result = await _mediator.Send(details);
+
+            if (string.IsNullOrEmpty(result))
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
+        }
 
         // Get Library By Id
         [HttpGet("{hubId}/lib/{libId}", Name = "Get Library By Id")]
@@ -120,9 +140,9 @@ namespace HAS.Content.Controllers
         [HttpPut("{hubId}/lib/{libId}/access/{access}", Name="Set Library Access")]
         public async Task<IActionResult> SetLibraryAccess(string hubId, string libId, string access)
         {
-            var result = await _mediator.Send(new SetLibraryAccessCommand(hubId, libId, access));
+            var result = await _mediator.Send(new UpdateLibraryAccessCommand(hubId, libId, access));
 
-            if (result == null)
+            if (string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }
@@ -139,7 +159,7 @@ namespace HAS.Content.Controllers
         {
             var result = await _mediator.Send(new AddTribeToLibraryCommand(hubId, libId, tribeId));
 
-            if (result == null)
+            if (string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }
@@ -154,9 +174,9 @@ namespace HAS.Content.Controllers
         [HttpPut("{hubId}/lib/{libId}/tribe/default/{tribeId}", Name = "Set Library to Default Tribe")]
         public async Task<IActionResult> SetLibraryDefaultTribe(string hubId, string libId, string tribeId)
         {
-            var result = await _mediator.Send(new SetLibraryDefaultTribeCommand(hubId, libId, tribeId));
+            var result = await _mediator.Send(new UpdateLibraryDefaultTribeCommand(hubId, libId, tribeId));
 
-            if (result == null)
+            if (string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }
@@ -219,7 +239,7 @@ namespace HAS.Content.Controllers
         [HttpDelete("{hubId}/lib/{libId}/content/{contentId}", Name = "Remove Content from Library")]
         public async Task<IActionResult> RemoveLibraryContent(string hubId, string libId, string contentId)
         {
-            var result = await _mediator.Send(new RemoveContentFromLibraryCommand(hubId, libId, contentId));
+            var result = await _mediator.Send(new DeleteContentFromLibraryCommand(hubId, libId, contentId));
 
             if (!result)
             {
@@ -281,7 +301,7 @@ namespace HAS.Content.Controllers
         {
             var result = await _mediator.Send(new DeleteLibraryDefaultTribeCommand(hubId, libId));
 
-            if (result == null)
+            if (string.IsNullOrEmpty(result))
             {
                 return NotFound();
             }

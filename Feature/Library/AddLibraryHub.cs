@@ -12,25 +12,25 @@ using static HAS.Content.Data.LibraryContext;
 
 namespace HAS.Content.Feature.Library
 {
-    public class CreateLibraryHub
+    public class AddLibraryHub
     {
         private readonly IMediator _mediator;
 
-        public CreateLibraryHub(IMediator mediator) => _mediator = mediator;
+        public AddLibraryHub(IMediator mediator) => _mediator = mediator;
 
-        public class CreateLibraryHubCommand : IRequest<string>
+        public class AddLibraryHubCommand : IRequest<string>
         {
             public string InstructorId { get; set; }
 
-            public CreateLibraryHubCommand(string instructorId) => InstructorId = instructorId;
+            public AddLibraryHubCommand(string instructorId) => InstructorId = instructorId;
         }
 
-        public class CreateLibraryHubCommandHandler : IRequestHandler<CreateLibraryHubCommand, string>
+        public class AddLibraryHubCommandHandler : IRequestHandler<AddLibraryHubCommand, string>
         {
             public readonly LibraryContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
 
-            public CreateLibraryHubCommandHandler(LibraryContext db)
+            public AddLibraryHubCommandHandler(LibraryContext db)
             {
                 _db = db; 
                 _mapperConfiguration = new MapperConfiguration(cfg =>
@@ -39,7 +39,7 @@ namespace HAS.Content.Feature.Library
                 });
             }
 
-            public async Task<string> Handle(CreateLibraryHubCommand cmd, CancellationToken cancellationToken)
+            public async Task<string> Handle(AddLibraryHubCommand cmd, CancellationToken cancellationToken)
             {
                 var hub = Hub.Create(string.Empty, cmd.InstructorId, DateTime.UtcNow, new List<Model.Content>(), new List<Model.Library>());
 

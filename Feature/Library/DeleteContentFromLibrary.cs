@@ -14,33 +14,33 @@ using static HAS.Content.Feature.Library.GetHubById;
 
 namespace HAS.Content.Feature.Library
 {
-    public class CreateNewLibraryInHub
+    public class DeleteContentFromLibrary
     {
         private readonly IMediator _mediator;
 
-        public CreateNewLibraryInHub(IMediator mediator) => _mediator = mediator;
+        public DeleteContentFromLibrary(IMediator mediator) => _mediator = mediator;
 
-        public class CreateNewLibraryInHubDTO
-        {
-            public string Name { get; set; }
-            public string Description { get; set; }
-        }
-
-        public class CreateNewLibraryInHubCommand : IRequest<string>
+        public class DeleteContentFromLibraryCommand : IRequest<bool>
         {
             public string HubId { get; set; }
-            public string Name { get; set; }
-            public string Description { get; set; }
+            public string LibraryId { get; set; }
+            public string MediaId { get; set; }
 
+            public DeleteContentFromLibraryCommand(string hubId, string libraryId, string mediaId)
+            {
+                HubId = hubId;
+                LibraryId = libraryId;
+                MediaId = mediaId;
+            }
         }
-        
-        public class CreateNewLibraryInHubCommandHandler : IRequestHandler<CreateNewLibraryInHubCommand, string>
+
+        public class DeleteContentFromLibraryCommandHandler : IRequestHandler<DeleteContentFromLibraryCommand, bool>
         {
             public readonly LibraryContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
             private readonly IMediator _mediator;
 
-            public CreateNewLibraryInHubCommandHandler(LibraryContext db, IMediator mediator)
+            public DeleteContentFromLibraryCommandHandler(LibraryContext db, IMediator mediator)
             {
                 _db = db;
                 _mediator = mediator;
@@ -51,12 +51,12 @@ namespace HAS.Content.Feature.Library
                     cfg.CreateMap<GetHubByIdResult, Hub>()
                         .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
                         .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
+
                 });
             }
 
-            public async Task<string> Handle(CreateNewLibraryInHubCommand cmd, CancellationToken cancellationToken)
+            public async Task<bool> Handle(DeleteContentFromLibraryCommand cmd, CancellationToken cancellationToken)
             {
-
                 var result = await _mediator.Send(new GetHubByIdQuery(cmd.HubId));
 
                 var mapper = new Mapper(_mapperConfiguration);
@@ -74,20 +74,17 @@ namespace HAS.Content.Feature.Library
 
                         var update = await _db.Library.FindOneAndReplaceAsync(filter, dao, options);
 
-                        return update.Libraries.Where(x => x.Name.Equals(cmd.Name) && x.Description.Equals(cmd.Description)).FirstOrDefault().Id.ToString();
+                        return update.Libraries.Where(x => x.Id == ObjectId.Parse(cmd.LibraryId)).FirstOrDefault().Content.Count() == 0;
 
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
-                        return string.Empty;
+                        return false;
                     }
-
                 }
 
-                return string.Empty;
-                
+                return false;
             }
         }
-
     }
 }

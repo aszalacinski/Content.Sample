@@ -14,48 +14,46 @@ using static HAS.Content.Feature.Library.GetHubById;
 
 namespace HAS.Content.Feature.Library
 {
-    public class RemoveContentFromLibrary
+    public class UpdateLibraryDefaultTribe
     {
         private readonly IMediator _mediator;
 
-        public RemoveContentFromLibrary(IMediator mediator) => _mediator = mediator;
+        public UpdateLibraryDefaultTribe(IMediator mediator) => _mediator = mediator;
 
-        public class RemoveContentFromLibraryCommand : IRequest<bool>
+        public class UpdateLibraryDefaultTribeCommand : IRequest<string>
         {
             public string HubId { get; set; }
             public string LibraryId { get; set; }
-            public string MediaId { get; set; }
+            public string TribeId { get; set; }
 
-            public RemoveContentFromLibraryCommand(string hubId, string libraryId, string mediaId)
+            public UpdateLibraryDefaultTribeCommand(string hubId, string libraryId, string tribeId)
             {
                 HubId = hubId;
                 LibraryId = libraryId;
-                MediaId = mediaId;
+                TribeId = tribeId;
             }
         }
 
-        public class RemoveContentFromLibraryCommandHandler : IRequestHandler<RemoveContentFromLibraryCommand, bool>
+        public class UpdateLibraryDefaultTribeCommandHandler : IRequestHandler<UpdateLibraryDefaultTribeCommand, string>
         {
             public readonly LibraryContext _db;
             private readonly MapperConfiguration _mapperConfiguration;
             private readonly IMediator _mediator;
 
-            public RemoveContentFromLibraryCommandHandler(LibraryContext db, IMediator mediator)
+            public UpdateLibraryDefaultTribeCommandHandler(LibraryContext db, IMediator mediator)
             {
                 _db = db;
                 _mediator = mediator;
                 _mapperConfiguration = new MapperConfiguration(cfg =>
                 {
                     cfg.AddProfile<LibraryDAOProfile>();
-
                     cfg.CreateMap<GetHubByIdResult, Hub>()
                         .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
                         .ForMember(m => m.Libraries, opt => opt.MapFrom(src => src.Libraries));
-
                 });
             }
 
-            public async Task<bool> Handle(RemoveContentFromLibraryCommand cmd, CancellationToken cancellationToken)
+            public async Task<string> Handle(UpdateLibraryDefaultTribeCommand cmd, CancellationToken cancellationToken)
             {
                 var result = await _mediator.Send(new GetHubByIdQuery(cmd.HubId));
 
@@ -74,16 +72,17 @@ namespace HAS.Content.Feature.Library
 
                         var update = await _db.Library.FindOneAndReplaceAsync(filter, dao, options);
 
-                        return update.Libraries.Where(x => x.Id == ObjectId.Parse(cmd.LibraryId)).FirstOrDefault().Content.Count() == 0;
+                        return update.Libraries.Where(x => x.Id == ObjectId.Parse(cmd.LibraryId)).FirstOrDefault().Id.ToString();
 
                     }
                     catch (Exception)
                     {
-                        return false;
+                        return string.Empty;
                     }
+
                 }
 
-                return false;
+                return string.Empty;
             }
         }
     }
