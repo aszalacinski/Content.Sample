@@ -10,8 +10,10 @@ using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateLibraryHub;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.DeleteLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.DeleteLibraryHub;
+using static HAS.Content.Feature.Library.DeleteTribeFromLibrary;
 using static HAS.Content.Feature.Library.GetHubById;
 using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
@@ -257,6 +259,37 @@ namespace HAS.Content.Controllers
             }
 
             return Ok(result);
+        }
+
+        // Delete Tribe from Library
+        [HttpDelete("{hubId}/lib/{libId}/tribe/{tribeId}", Name = "Remove Tribe from Library")]
+        public async Task<IActionResult> DeleteTribeFromLibrary(string hubId, string libId, string tribeId)
+        {
+            var result = await _mediator.Send(new DeleteTribeFromLibraryCommand(hubId, libId, tribeId));
+
+            if (!result)
+            {
+                return BadRequest($"There was an error deleting the tribe. Make sure it's not the default tribe");
+            }
+
+            return Ok(result);
+        }
+
+        // Delete Library Default Tribe
+        [HttpDelete("{hubId}/lib/{libId}/tribe/default", Name = "Delete Library Default Tribe")]
+        public async Task<IActionResult> DeleteLibraryDefaultTribe(string hubId, string libId)
+        {
+            var result = await _mediator.Send(new DeleteLibraryDefaultTribeCommand(hubId, libId));
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
+
+            Response.Headers.Add("Location", uri);
+            return StatusCode(303);
         }
     }
 }

@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.CreateNewLibraryInHub;
+using static HAS.Content.Feature.Library.DeleteLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
+using static HAS.Content.Feature.Library.DeleteTribeFromLibrary;
 using static HAS.Content.Feature.Library.RemoveContentFromLibrary;
 using static HAS.Content.Feature.Library.SetLibraryAccess;
 using static HAS.Content.Feature.Library.SetLibraryDefaultTribe;
@@ -47,6 +49,10 @@ namespace HAS.Content.Model
         public bool Handle(RemoveContentFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         public bool Handle(DeleteLibraryFromHubCommand cmd) => DeleteLibrary(cmd);
+
+        public bool Handle(DeleteTribeFromLibraryCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
+
+        public bool Handle(DeleteLibraryDefaultTribeCommand cmd) => GetLibrary(cmd.LibraryId).Handle(cmd);
 
         private bool DeleteLibrary(DeleteLibraryFromHubCommand cmd)
         {
@@ -163,6 +169,45 @@ namespace HAS.Content.Model
         public bool Handle(RemoveContentFromLibraryCommand cmd)
         {
             return RemoveContentFromLibrary(cmd.MediaId);
+        }
+
+        public bool Handle(DeleteTribeFromLibraryCommand cmd)
+        {
+            return RemoveTribeFromLibrary(cmd.TribeId);
+        }
+
+        public bool Handle(DeleteLibraryDefaultTribeCommand cmd)
+        {
+            return DeleteLibraryDefaultTribe();
+        }
+
+        private bool DeleteLibraryDefaultTribe()
+        {
+            if(DefaultTribe != null)
+            {
+                DefaultTribe = null;
+            }
+
+            return DefaultTribe == null;
+        }
+
+        private bool RemoveTribeFromLibrary(string tribeId)
+        {
+            if (Tribes.Any(x => x.Id.Equals(tribeId)))
+            {
+                if (!IsDefault(tribeId))
+                {
+                    var list = this.Tribes.ToList();
+                    var tribe = list.Where(x => x.Id == tribeId).FirstOrDefault();
+                    if (list.Remove(tribe))
+                    {
+                        this.Tribes = list;
+                        return true;
+                    }
+                }
+                return false;
+            }
+            return true;
         }
 
         private bool RemoveContentFromLibrary(string mediaId)
