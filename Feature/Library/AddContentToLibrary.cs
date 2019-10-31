@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using HAS.Content.Data;
+using HAS.Content.Feature.EventLog;
 using HAS.Content.Model;
 using MediatR;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,11 +16,7 @@ namespace HAS.Content.Feature.Library
 {
     public class AddContentToLibrary
     {
-        private readonly IMediator _mediator;
-
-        public AddContentToLibrary(IMediator mediator) => _mediator = mediator;
-
-        public class AddContentToLibraryCommand : IRequest<bool>
+        public class AddContentToLibraryCommand : IRequest<bool>, ICommandEvent
         {
             public string HubId { get; set; }
             public string LibraryId { get; set; }

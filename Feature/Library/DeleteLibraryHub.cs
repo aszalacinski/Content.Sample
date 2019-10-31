@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HAS.Content.Data;
+using HAS.Content.Feature.EventLog;
 using HAS.Content.Model;
 using MediatR;
 using MongoDB.Bson;
@@ -16,11 +17,7 @@ namespace HAS.Content.Feature.Library
 {
     public class DeleteLibraryHub
     {
-        private readonly IMediator _mediator;
-
-        public DeleteLibraryHub(IMediator mediator) => _mediator = mediator;
-
-        public class DeleteLibraryHubCommand : IRequest<long>
+        public class DeleteLibraryHubCommand : IRequest<long>, ICommandEvent
         {
             public string HubId { get; set; }
 

@@ -47,12 +47,12 @@ namespace HAS.Content.Controllers
         {
             var result = await _mediator.Send(new UploadAudioCommand(Request));
 
-            if(string.IsNullOrEmpty(result))
+            if(result == null)
             {
                 return NotFound();
             }
 
-            Response.Headers.Add("Location", $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/media/{result}");
+            Response.Headers.Add("Location", $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/media/{result.MediaId}");
             return StatusCode(303);
         }
 

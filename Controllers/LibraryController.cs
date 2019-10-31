@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
-using static HAS.Content.Feature.Library.AddTribeToLibrary;
 using static HAS.Content.Feature.Library.AddLibraryHub;
 using static HAS.Content.Feature.Library.AddNewLibraryInHub;
+using static HAS.Content.Feature.Library.AddTribeToLibrary;
+using static HAS.Content.Feature.Library.DeleteContentFromLibrary;
 using static HAS.Content.Feature.Library.DeleteLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.DeleteLibraryFromHub;
 using static HAS.Content.Feature.Library.DeleteLibraryHub;
@@ -19,14 +17,13 @@ using static HAS.Content.Feature.Library.GetHubByProfileId;
 using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Library.GetLibraryByName;
 using static HAS.Content.Feature.Library.GetLibraryContent;
-using static HAS.Content.Feature.Library.DeleteContentFromLibrary;
 using static HAS.Content.Feature.Library.UpdateLibraryAccess;
 using static HAS.Content.Feature.Library.UpdateLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.UpdateLibraryInHub;
 
 namespace HAS.Content.Controllers
 {
-    [AllowAnonymous]
+    [Authorize]
     [Route("[controller]")]
     [ApiController]
     public class LibraryController : ControllerBase

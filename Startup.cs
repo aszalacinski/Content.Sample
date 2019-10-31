@@ -1,21 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
+using HAS.Content.ApplicationServices.Messaging;
 using HAS.Content.Data;
 using HAS.Content.Feature.Azure;
+using HAS.Content.Feature.EventLog;
 using IdentityServer4.AccessTokenValidation;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System;
 
 namespace HAS.Content
 {
@@ -54,6 +50,15 @@ namespace HAS.Content
             services.AddTransient<ICloudStorageService, CloudStorageService>();
             services.AddScoped<ContentContext>();
             services.AddScoped<LibraryContext>();
+            services.AddSingleton<IQueueService>(opt =>
+            {
+                var queueService = AzureStorageQueueService.Create(Configuration["Azure:Storage:ConnectionString"]);
+                queueService.CreateQueue(Configuration["Azure:Storage:Queue:LogEventMPY:Name"]).Wait();
+
+                return queueService;
+            });
+
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(EventLogBehavior<,>));
 
             services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
                 .AddIdentityServerAuthentication(options =>

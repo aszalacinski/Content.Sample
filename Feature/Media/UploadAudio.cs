@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HAS.Content.Data;
 using HAS.Content.Feature.Azure;
+using HAS.Content.Feature.EventLog;
 using HAS.Content.Model;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Azure.Storage;
 using Microsoft.Net.Http.Headers;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -23,18 +23,20 @@ namespace HAS.Content.Feature.Media
 {
     public class UploadAudio
     {
-        private readonly IMediator _mediator;
-
-        public UploadAudio(IMediator mediator) => _mediator = mediator;
-
-        public class UploadAudioCommand : IRequest<string>
+        public class UploadAudioCommand : IRequest<UploadAudioCommandResult>, ICommandEvent
         {
             public HttpRequest Request { get; set; }
 
             public UploadAudioCommand(HttpRequest request) => Request = request;
         }
 
-        public class UploadAudioCommandHandler : IRequestHandler<UploadAudioCommand, string>
+        public class UploadAudioCommandResult
+        {
+            public string MediaId { get; set; }
+            public string ProfileId { get; set; }
+        }
+
+        public class UploadAudioCommandHandler : IRequestHandler<UploadAudioCommand, UploadAudioCommandResult>
         {
             private static readonly string[] _permittedExtensions = { ".m4a" };
             private readonly long _fileSizeLimit = 6000000000;
@@ -54,7 +56,7 @@ namespace HAS.Content.Feature.Media
                 });
             }
 
-            public async Task<string> Handle(UploadAudioCommand cmd, CancellationToken cancellationToken)
+            public async Task<UploadAudioCommandResult> Handle(UploadAudioCommand cmd, CancellationToken cancellationToken)
             {
                 var request = cmd.Request;
 
@@ -64,6 +66,8 @@ namespace HAS.Content.Feature.Media
                 }
 
                 string mediaId = string.Empty;
+
+                UploadAudioCommandResult cmdResult = new UploadAudioCommandResult();
 
                 try
                 {
@@ -82,6 +86,9 @@ namespace HAS.Content.Feature.Media
 
                     mediaId = await AddInstructorAudioMedia(instructorId, firstName, lastName, title, Convert.ToInt32(duration), DateTime.UtcNow, DateTime.UtcNow, file);
 
+                    cmdResult.MediaId = mediaId;
+                    cmdResult.ProfileId = instructorId;
+
                     if(string.IsNullOrEmpty(mediaId))
                     {
                         throw new Exception($"Could not add instructor media");
@@ -93,7 +100,7 @@ namespace HAS.Content.Feature.Media
                     throw ex;
                 }
 
-                return mediaId;
+                return cmdResult;
             }
 
             private async Task<(byte[] File, KeyValueAccumulator Form)> ProcessFile(HttpRequest request)
