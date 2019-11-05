@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using static HAS.Content.Data.ContentContext;
+using static HAS.Content.Feature.Media.GetMediaCloudUrl;
 
 namespace HAS.Content.Feature.Media
 {
@@ -33,23 +34,26 @@ namespace HAS.Content.Feature.Media
             public string InstructorId { get; set; }
             public string InstructorName { get; set; }
             public string FileName { get; set; }
-            public string FileType { get; private set; }
-            public string FileExtension { get; private set; }
-            public ContentDetails ContentDetails { get; private set; }
-            public DateTime RecordingDate { get; private set; }
-            public DateTime UploadDate { get; private set; }
-            public StateDetails State { get; private set; }
-            public Manifest Manifest { get; private set; }
+            public string FileType { get; set; }
+            public string FileExtension { get; set; }
+            public ContentDetails ContentDetails { get; set; }
+            public DateTime RecordingDate { get; set; }
+            public DateTime UploadDate { get; set; }
+            public StateDetails State { get; set; }
+            public Manifest Manifest { get; set; }
+            public Uri Uri { get; set; }
         }
 
         public class FindByIdQueryHandler : IRequestHandler<FindByIdQuery, FindByIdResult>
         {
             private readonly ContentContext _db;
+            private readonly IMediator _mediator;
             private readonly MapperConfiguration _mapperConfiguration;
 
-            public FindByIdQueryHandler(ContentContext db)
+            public FindByIdQueryHandler(ContentContext db, IMediator mediator)
             {
                 _db = db;
+                _mediator = mediator;
 
                 _mapperConfiguration = new MapperConfiguration(cfg =>
                 {
@@ -71,6 +75,10 @@ namespace HAS.Content.Feature.Media
                                     .Find(x => x.Id == ObjectId.Parse(request.Id.ToString()))
                                     .Project(projection)
                                     .FirstOrDefaultAsync();
+
+                string containerRef = $"{media.InstructorName[0]}{media.InstructorName.Split(' ')[1]}-{media.InstructorId}".ToLower();
+
+                media.Uri = await _mediator.Send(new GetMediaCloudUrlQuery(containerRef, media.FileType, media.FileName, media.FileExtension));
 
                 return media;
 

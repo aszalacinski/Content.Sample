@@ -198,5 +198,27 @@ namespace HAS.Content.Feature.Azure
         {
             return $"{folder}{container.ServiceClient.DefaultDelimiter}{fileName}";
         }
+
+        public static string GetContainerSASToken(CloudBlobContainer container, string policyName = null)
+        {
+            string token;
+
+            if (policyName == null)
+            {
+                SharedAccessBlobPolicy adHocPolicy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(60),
+                    Permissions = SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Read
+                };
+
+                token = container.GetSharedAccessSignature(adHocPolicy, null);
+            }
+            else
+            {
+                token = container.GetSharedAccessSignature(null, policyName);
+            }
+
+            return token;
+        }
     }
 }
