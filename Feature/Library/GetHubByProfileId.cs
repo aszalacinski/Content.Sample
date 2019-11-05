@@ -31,7 +31,19 @@ namespace HAS.Content.Feature.Library
             public string InstructorId { get; private set; }
             public DateTime CreateDate { get; private set; }
             public IEnumerable<Model.Content> Content { get; private set; }
-            public IEnumerable<Model.Library> Libraries { get; private set; }
+            public IEnumerable<GetHubByProfileIdLibraryResult> Libraries { get; private set; }
+        }
+
+        public class GetHubByProfileIdLibraryResult
+        {
+            public string Id { get; private set; }
+            public string Name { get; private set; }
+            public string Description { get; private set; }
+            public DateTime CreateDate { get; private set; }
+            public string Access { get; private set; }
+            public IEnumerable<Model.Content> Content { get; private set; }
+            public Tribe DefaultTribe { get; private set; }
+            public IEnumerable<Tribe> Tribes { get; private set; }
         }
 
         public class GetHubByProfileIdQueryHandler : IRequestHandler<GetHubByProfileIdQuery, GetHubByProfileIdResult>
@@ -46,7 +58,7 @@ namespace HAS.Content.Feature.Library
                 {
                     cfg.CreateMap<TribeDAO, Tribe>();
                     cfg.CreateMap<ContentDAO, Model.Content>();
-                    cfg.CreateMap<LibraryDAO, Model.Library>()
+                    cfg.CreateMap<LibraryDAO, GetHubByProfileIdLibraryResult>()
                         .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
                         .ForMember(m => m.DefaultTribe, opt => opt.MapFrom(src => src.DefaultTribe))
                         .ForMember(m => m.Tribes, opt => opt.MapFrom(src => src.Tribes));

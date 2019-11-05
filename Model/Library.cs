@@ -157,7 +157,7 @@ namespace HAS.Content.Model
 
         public bool Handle(AddTribeToLibraryCommand cmd)
         {
-            return AddTribeToLibrary(cmd.LibraryId);
+            return AddTribeToLibrary(cmd.TribeId);
         }
 
         public bool Handle(UpdateLibraryDefaultTribeCommand cmd)

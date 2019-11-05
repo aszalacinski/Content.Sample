@@ -40,12 +40,13 @@ namespace HAS.Content.Feature.Library
 
             public async Task<GetLibraryByNameResult> Handle(GetLibraryByNameQuery request, CancellationToken cancellationToken)
             {
-                var projection = Builders<HubDAO>.Projection.Expression(x => new GetLibraryByNameResult { HubId = x.Id.ToString(), LibraryId = x.Libraries.Where(y => y.Name.ToUpper() == request.LibraryName.ToUpper()).FirstOrDefault().Id.ToString() });
+                var projection = Builders<HubDAO>.Projection.Expression(x => new GetLibraryByNameResult { HubId = x.Id.ToString(), LibraryId = x.Libraries.FirstOrDefault(x => x.Name.Contains(request.LibraryName)).Id.ToString() });
 
                 var library = await _db.Library
                                     .Find(x => x.InstructorId == request.ProfileId)
                                     .Project(projection)
                                     .FirstOrDefaultAsync();
+
                 return library;
 
             }

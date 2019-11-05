@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using static HAS.Content.Feature.Media.FindById;
 using static HAS.Content.Feature.Media.FindByProfileId;
+using static HAS.Content.Feature.Media.GetMediaByArrayOfIds;
 using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
@@ -40,6 +42,20 @@ namespace HAS.Content.Controllers
             return Ok(result);
         }
 
+        [HttpGet("multi", Name = "GetMediaByMultipleIds")]
+        public async Task<IActionResult> GetMediaByMultipleIds([FromQuery] string[] mediaIds)
+        {
+            var result = await _mediator.Send(new GetMediaByArrayOfIdsQuery(mediaIds));
+
+            if(result.Count() <= 0)
+            {
+                return Ok("[]");
+            }
+
+            return Ok(result);
+        }
+
+
         [Authorize(Policy = "instructor")]
         [HttpPost("new", Name = "UploadAudio")]
         [RequestSizeLimit(6000000000)]
@@ -51,15 +67,20 @@ namespace HAS.Content.Controllers
             {
                 return NotFound();
             }
-
-            Response.Headers.Add("Location", $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/media/{result.MediaId}");
-            return StatusCode(303);
+            
+            var media = await _mediator.Send(new FindByIdQuery(result.MediaId));
+            return Ok(media);
         }
 
         [HttpGet("all/{instructorId}", Name = "FindByProfileId")]
         public async Task<IActionResult> FindByProfileId(string instructorId)
         {
             var result = await _mediator.Send(new FindByProfileIdQuery(instructorId));
+
+            if (result.Count() <= 0)
+            {
+                return Ok("[]");
+            }
 
             return Ok(result);
         }

@@ -37,6 +37,7 @@ namespace HAS.Content.Feature
             CreateMap<TribeDAO, Tribe>();
             CreateMap<Data.LibraryContext.ContentDAO, Model.Content>();
             CreateMap<LibraryDAO, Model.Library>()
+                .ForMember(m => m.Access, opt => opt.MapFrom(src => Enum.Parse(typeof(AccessType), src.Access)))
                 .ForMember(m => m.Content, opt => opt.MapFrom(src => src.Content))
                 .ForMember(m => m.DefaultTribe, opt => opt.MapFrom(src => src.DefaultTribe))
                 .ForMember(m => m.Tribes, opt => opt.MapFrom(src => src.Tribes));

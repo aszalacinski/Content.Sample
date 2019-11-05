@@ -39,17 +39,15 @@ namespace HAS.Content.Controllers
         [HttpPost("{profileId}", Name="Create Library Hub")]
         public async Task<IActionResult> CreateLibraryHub(string profileid)
         {
-            var result = await _mediator.Send(new AddLibraryHubCommand(profileid));
+            var hubId = await _mediator.Send(new AddLibraryHubCommand(profileid));
 
-            if(string.IsNullOrEmpty(result))
+            if(string.IsNullOrEmpty(hubId))
             {
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var hub = await _mediator.Send(new GetHubByIdQuery(hubId));
+            return Ok(hub);
         }
 
         // Get Library Hub by Id
@@ -86,17 +84,16 @@ namespace HAS.Content.Controllers
         {
             details.HubId = hubId;
 
-            var result = await _mediator.Send(details);
+            var libraryId = await _mediator.Send(details);
 
-            if(string.IsNullOrEmpty(result))
+            if(string.IsNullOrEmpty(libraryId))
             {
                 return NotFound();
             }
+            
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libraryId));
+            return Ok(library);
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
         }
 
         // Update Library in Hub
@@ -113,10 +110,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Get Library By Id
@@ -144,10 +139,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Add Tribe to Library
@@ -161,10 +154,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Set Library Default Tribe
@@ -178,10 +169,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Get Library By Name
@@ -194,11 +183,9 @@ namespace HAS.Content.Controllers
             {
                 return NotFound();
             }
-
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{result.HubId}/lib/{result.LibraryId}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            
+            var library = await _mediator.Send(new GetLibraryByIdQuery(result.HubId, result.LibraryId));
+            return Ok(library);
         }
 
         // Get Library Content
@@ -226,10 +213,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{libId}/content";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryContentQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Remove Content from Library
@@ -243,10 +228,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{libId}/content";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryContentQuery(hubId, libId));
+            return Ok(library);
         }
 
         // Delete Library Hub
@@ -303,10 +286,8 @@ namespace HAS.Content.Controllers
                 return NotFound();
             }
 
-            var uri = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/library/{hubId}/lib/{result}";
-
-            Response.Headers.Add("Location", uri);
-            return StatusCode(303);
+            var library = await _mediator.Send(new GetLibraryByIdQuery(hubId, libId));
+            return Ok(library);
         }
     }
 }
