@@ -6,9 +6,11 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static HAS.Content.Data.ContentContext;
+using static HAS.Content.Feature.Media.GetMediaCloudUrlByArrayOfFilenames;
 
 namespace HAS.Content.Feature.Media
 {
@@ -34,23 +36,26 @@ namespace HAS.Content.Feature.Media
             public string InstructorId { get; set; }
             public string InstructorName { get; set; }
             public string FileName { get; set; }
-            public string FileType { get; private set; }
-            public string FileExtension { get; private set; }
-            public ContentDetails ContentDetails { get; private set; }
-            public DateTime RecordingDate { get; private set; }
-            public DateTime UploadDate { get; private set; }
-            public StateDetails State { get; private set; }
-            public Model.Manifest Manifest { get; private set; }
+            public string FileType { get; set; }
+            public string FileExtension { get; set; }
+            public ContentDetails ContentDetails { get; set; }
+            public DateTime RecordingDate { get; set; }
+            public DateTime UploadDate { get; set; }
+            public StateDetails State { get; set; }
+            public Model.Manifest Manifest { get; set; }
+            public Uri Uri { get; set; }
         }
 
         public class FindByProfileIdQueryHandler : IRequestHandler<FindByProfileIdQuery, IEnumerable<FindByProfileIdResult>>
         {
             private readonly ContentContext _db;
+            private readonly IMediator _mediator;
             private readonly MapperConfiguration _mapperConfiguration;
 
-            public FindByProfileIdQueryHandler(ContentContext db)
+            public FindByProfileIdQueryHandler(ContentContext db, IMediator mediator)
             {
                 _db = db;
+                _mediator = mediator;
                 _mapperConfiguration = new MapperConfiguration(cfg =>
                 {
 
@@ -62,14 +67,15 @@ namespace HAS.Content.Feature.Media
                 });
             }
 
-            public async Task<IEnumerable<FindByProfileIdResult>> Handle(FindByProfileIdQuery request, CancellationToken cancellationToken)
+            public async Task<IEnumerable<FindByProfileIdResult>> Handle(FindByProfileIdQuery query, CancellationToken cancellationToken)
             {
+
                 var mapper = new Mapper(_mapperConfiguration);
 
                 var projection = Builders<ContentDAO>.Projection.Expression(x => mapper.Map<FindByProfileIdResult>(x));
 
                 var results = await _db.Content
-                                        .Find(x => x.InstructorId == request.ProfileId)
+                                        .Find(x => x.InstructorId == query.ProfileId)
                                         .Project(projection)
                                         .ToListAsync();
 
@@ -77,8 +83,26 @@ namespace HAS.Content.Feature.Media
                 {
                     return new List<FindByProfileIdResult>();
                 }
+                else
+                {
+                    var firstMedia = results[0];
 
-                return results;
+
+                    string containerRef = $"{firstMedia.InstructorName[0]}{firstMedia.InstructorName.Split(' ')[1]}-{firstMedia.InstructorId}".ToLower();
+
+                    //create array of filenames
+                    string[] fileNames = results.Select(x => x.FileName).ToArray();
+
+                    var uris = await _mediator.Send(new GetMediaCloudUrlByArrayOfFilenamesQuery(containerRef, firstMedia.FileType, fileNames, firstMedia.FileExtension));
+
+                    foreach(var result in results)
+                    {
+                        var uri = uris[result.FileName];
+                        result.Uri = uri;
+                    }
+
+                    return results;
+                }
             }
         }
     }
