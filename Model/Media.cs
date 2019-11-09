@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static HAS.Content.Feature.Media.UpdateMedia;
 
 namespace HAS.Content.Model
 {
@@ -40,6 +41,11 @@ namespace HAS.Content.Model
         {
             return new Media(id, instructorId, instructorName, fileName, fileType, fileExtension, recordingDate, uploadDate, contentDetails, stateDetails, manifest);
         }
+
+        public bool Handle(UpdateMediaCommand cmd)
+        {
+            return ContentDetails.Handle(cmd);
+        }
     }
 
     public enum FileType
@@ -74,6 +80,15 @@ namespace HAS.Content.Model
         public static ContentDetails Create(string title, string description, long duration, long size, double likeScore, IEnumerable<string> tags)
         {
             return new ContentDetails(title, description, duration, size, likeScore, tags);
+        }
+
+        public bool Handle(UpdateMediaCommand cmd)
+        {
+            Title = cmd.Title;
+            Description = cmd.Description;
+            Duration = cmd.Duration;
+
+            return Title == cmd.Title && Description == cmd.Description && Duration == cmd.Duration;
         }
     }
 

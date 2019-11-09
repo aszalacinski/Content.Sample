@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using static HAS.Content.Feature.Media.FindById;
 using static HAS.Content.Feature.Media.FindByProfileId;
 using static HAS.Content.Feature.Media.GetMediaByArrayOfIds;
+using static HAS.Content.Feature.Media.UpdateMedia;
 using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
@@ -80,6 +81,21 @@ namespace HAS.Content.Controllers
             if (result.Count() <= 0)
             {
                 return Ok("[]");
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPut("{mediaId}", Name = "UpdateMedia")]
+        public async Task<IActionResult> UpdateMedia(string mediaId, [FromBody] UpdateMediaCommand details)
+        {
+            details.MediaId = mediaId;
+
+            var result = await _mediator.Send(details);
+
+            if(result == null)
+            {
+                return NotFound();
             }
 
             return Ok(result);
