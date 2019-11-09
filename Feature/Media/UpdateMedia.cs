@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HAS.Content.Data;
+using HAS.Content.Feature.EventLog;
 using MediatR;
 using MongoDB.Driver;
 using System;
@@ -14,7 +15,7 @@ namespace HAS.Content.Feature.Media
 {
     public class UpdateMedia
     {
-        public class UpdateMediaCommand : IRequest<UpdateMediaResult>
+        public class UpdateMediaCommand : IRequest<UpdateMediaResult>, ICommandEvent
         {
             public string MediaId { get; set; }
             public string Title { get; set; }
