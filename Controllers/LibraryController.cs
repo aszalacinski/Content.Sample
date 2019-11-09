@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 using static HAS.Content.Feature.Library.AddContentToLibrary;
 using static HAS.Content.Feature.Library.AddLibraryHub;
@@ -20,6 +21,7 @@ using static HAS.Content.Feature.Library.GetLibraryContent;
 using static HAS.Content.Feature.Library.UpdateLibraryAccess;
 using static HAS.Content.Feature.Library.UpdateLibraryDefaultTribe;
 using static HAS.Content.Feature.Library.UpdateLibraryInHub;
+using static HAS.Content.GetLibraryContentByArrayOfInstructorId;
 
 namespace HAS.Content.Controllers
 {
@@ -197,6 +199,20 @@ namespace HAS.Content.Controllers
             if (result == null)
             {
                 return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        // Get Library Content for All specified instructors
+        [HttpGet("content", Name = "Get Library Content by Instructor Id")]
+        public async Task<IActionResult> GetLibraryContentByInstructor([FromQuery] string[] instructorId)
+        {
+            var result = await _mediator.Send(new GetLibraryContentByArrayOfInstructorIdQuery(instructorId));
+
+            if(result.Count() <= 0)
+            {
+                return Ok("[]");
             }
 
             return Ok(result);
