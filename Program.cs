@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace HAS.Content
 {
@@ -18,6 +14,26 @@ namespace HAS.Content
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((ctx, builder) =>
+                {
+                    builder.SetBasePath(Directory.GetCurrentDirectory())
+                        .AddEnvironmentVariables();
+
+                    var config = builder.Build();
+
+                    builder.AddAzureKeyVault(
+                        $"https://{config["AzureKeyVault:vault"]}.vault.azure.net/",
+                        config["AzureKeyVault:clientId"],
+                        config["AzureKeyVault:clientSecret"]
+                        );
+
+                    if (ctx.HostingEnvironment.IsDevelopment())
+                    {
+                        builder.AddUserSecrets<Startup>();
+                    }
+
+
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();

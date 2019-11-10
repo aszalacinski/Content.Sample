@@ -17,21 +17,12 @@ namespace HAS.Content
 {
     public class Startup
     {
-        public Startup(IWebHostEnvironment env)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
-              .SetBasePath(env.ContentRootPath)
-              .AddJsonFile("appsettings.json",
-                           optional: false,
-                           reloadOnChange: true)
-              .AddEnvironmentVariables();
+            Configuration = configuration;
 
-                if (env.IsDevelopment())
-                {
-                    builder.AddUserSecrets<Startup>();
-                }
+            var testConfig = Configuration["MPY:Version"];
 
-            Configuration = builder.Build();
             Environment = env;
         }
 
