@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.AzureKeyVault;
 using Microsoft.Extensions.Hosting;
 using System.IO;
 
@@ -21,16 +24,21 @@ namespace HAS.Content
 
                     var config = builder.Build();
 
-                    builder.AddAzureKeyVault(
-                            $"https://{config["Azure.KeyVault.MPY.Vault"]}.vault.azure.net/",
-                            config["Azure.KeyVault.MPY.ClientId"],
-                            config["Azure.KeyVault.MPY.ClientSecret"]
-                            );
+                    var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                    var keyVaultClient = new KeyVaultClient(
+                        new KeyVaultClient.AuthenticationCallback(
+                            azureServiceTokenProvider.KeyVaultTokenCallback));
 
                     builder.AddAzureKeyVault(
-                        $"https://{config["Azure.KeyVault.HAS.Vault"]}.vault.azure.net/",
-                        config["Azure.KeyVault.HAS.ClientId"],
-                        config["Azure.KeyVault.HAS.ClientSecret"]
+                        $"https://{config["Azure_KeyVault_MPY_Vault"]}.vault.azure.net/",
+                        keyVaultClient,
+                        new DefaultKeyVaultSecretManager()
+                        );
+
+                    builder.AddAzureKeyVault(
+                        $"https://{config["Azure_KeyVault_HAS_Vault"]}.vault.azure.net/",
+                        keyVaultClient,
+                        new DefaultKeyVaultSecretManager()
                         );
 
                     if (ctx.HostingEnvironment.IsDevelopment())
