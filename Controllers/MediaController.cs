@@ -59,7 +59,7 @@ namespace HAS.Content.Controllers
 
         [Authorize(Policy = "instructor")]
         [HttpPost("new", Name = "UploadAudio")]
-        [RequestSizeLimit(6000000000)]
+        [DisableRequestSizeLimit]
         public async Task<IActionResult> UploadMedia()
         {
             var result = await _mediator.Send(new UploadAudioCommand(Request));

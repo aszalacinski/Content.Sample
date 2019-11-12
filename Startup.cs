@@ -71,9 +71,9 @@ namespace HAS.Content
                 options.AddPolicy("superadmin", policyAdmin => policyAdmin.RequireClaim("role", "superadmin"));
             });
 
-            services.Configure<FormOptions>(x =>
+            services.Configure<FormOptions>(options =>
             {
-                x.MultipartBodyLengthLimit = Convert.ToInt64(Configuration["MPY:Settings:FileSizeLimit"]);
+                options.MultipartBodyLengthLimit = options.MultipartBodyLengthLimit = long.MaxValue;
             });
         }
 
