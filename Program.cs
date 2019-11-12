@@ -4,6 +4,7 @@ using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.AzureKeyVault;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.IO;
 
 namespace HAS.Content
@@ -50,7 +51,12 @@ namespace HAS.Content
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                    webBuilder.UseKestrel();
+                    webBuilder.UseKestrel((ctx, options) =>
+                    {
+                        var config = ctx.Configuration;
+
+                        options.Limits.MaxRequestBodySize = Convert.ToInt64(config["MPY:Settings:FileSizeLimit"]);
+                    });
                 });
     }
 }
