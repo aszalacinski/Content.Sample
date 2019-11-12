@@ -55,8 +55,7 @@ namespace HAS.Content
                     {
                         var config = ctx.Configuration;
 
-                        //options.Limits.MaxRequestBodySize = Convert.ToInt64(config["MPY:Settings:FileSizeLimit"]);
-                        options.Limits.MaxRequestBodySize = null;
+                        options.Limits.MaxRequestBodySize = Convert.ToInt64(config["MPY:Settings:FileSizeLimit"]);
                     });
                 });
     }

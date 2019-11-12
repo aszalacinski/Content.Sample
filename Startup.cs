@@ -73,7 +73,7 @@ namespace HAS.Content
 
             services.Configure<FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = options.MultipartBodyLengthLimit = long.MaxValue;
+                options.MultipartBodyLengthLimit = long.MaxValue;
             });
         }
 

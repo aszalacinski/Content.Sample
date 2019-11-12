@@ -59,6 +59,8 @@ namespace HAS.Content.Controllers
 
         [Authorize(Policy = "instructor")]
         [HttpPost("new", Name = "UploadAudio")]
+        [RequestSizeLimit(6000000000)]
+        [IgnoreAntiforgeryToken]
         [DisableRequestSizeLimit]
         public async Task<IActionResult> UploadMedia()
         {
