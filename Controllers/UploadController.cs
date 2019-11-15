@@ -60,6 +60,8 @@ namespace HAS.Content.Controllers
         [HttpPost("audio", Name="UploadAudio")]
         [DisableFormValueModelBinding]
         [GenerateAntiforgeryTokenCookie]
+        [RequestSizeLimit(6000000000)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 6000000000)]
         public async Task<IActionResult> Audio()
         {
             if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))

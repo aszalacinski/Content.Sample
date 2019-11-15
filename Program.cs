@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
@@ -50,13 +51,21 @@ namespace HAS.Content
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
                     webBuilder.UseKestrel((ctx, options) =>
                     {
                         var config = ctx.Configuration;
 
-                        options.Limits.MaxRequestBodySize = Convert.ToInt64(config["MPY:Settings:FileSizeLimit"]);
-                    });
+                        options.Limits.MaxRequestBodySize = 6000000000;
+                        options.Limits.MinRequestBodyDataRate =
+                            new MinDataRate(bytesPerSecond: 100,
+                                gracePeriod: TimeSpan.FromSeconds(10));
+                        options.Limits.MinResponseDataRate =
+                            new MinDataRate(bytesPerSecond: 100,
+                                gracePeriod: TimeSpan.FromSeconds(10));
+                        options.Limits.RequestHeadersTimeout =
+                            TimeSpan.FromMinutes(2);
+                    })
+                    .UseStartup<Startup>();
                 });
     }
 }

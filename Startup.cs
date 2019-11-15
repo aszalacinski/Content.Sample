@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,7 +76,7 @@ namespace HAS.Content
 
             services.Configure<FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = long.MaxValue;
+                options.MultipartBodyLengthLimit = 6000000000;
             });
 
             services.AddAntiforgery(options =>
