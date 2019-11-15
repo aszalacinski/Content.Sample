@@ -18,6 +18,11 @@ namespace HAS.Content.Feature.Azure
             _cloudStorageAccount = StorageUtils.GetCloudStorageAccount(configuration["Azure:Storage:ConnectionString"]);
         }
 
+        public async Task<CloudBlockBlob> CreateBlob(string containerName, string fileName, string folderName)
+        {
+            return await GetWritableBlob(containerName, fileName, folderName);
+        }
+
         public async Task<BlobCreatedEvent> CreateBlob(string containerName, string fileName, byte[] fileContent, string folderName = null, Dictionary<string, string> properties = null, Dictionary<string, string> metadata = null)
         {
 

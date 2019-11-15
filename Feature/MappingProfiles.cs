@@ -13,7 +13,7 @@ using static HAS.Content.Feature.Library.GetLibraryById;
 using static HAS.Content.Feature.Media.FindById;
 using static HAS.Content.Feature.Media.FindByProfileId;
 
-namespace HAS.Content.Feature
+namespace HAS.Content
 {
     public class LibraryDAOProfile : Profile
     {
