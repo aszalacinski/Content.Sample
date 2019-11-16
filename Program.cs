@@ -56,14 +56,6 @@ namespace HAS.Content
                         var config = ctx.Configuration;
 
                         options.Limits.MaxRequestBodySize = 6000000000;
-                        options.Limits.MinRequestBodyDataRate =
-                            new MinDataRate(bytesPerSecond: 100,
-                                gracePeriod: TimeSpan.FromSeconds(10));
-                        options.Limits.MinResponseDataRate =
-                            new MinDataRate(bytesPerSecond: 100,
-                                gracePeriod: TimeSpan.FromSeconds(10));
-                        options.Limits.RequestHeadersTimeout =
-                            TimeSpan.FromMinutes(2);
                     })
                     .UseStartup<Startup>();
                 });

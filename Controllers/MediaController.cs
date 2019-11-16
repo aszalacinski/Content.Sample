@@ -54,24 +54,7 @@ namespace HAS.Content.Controllers
 
             return Ok(result);
         }
-
-
-        //[Authorize(Policy = "instructor")]
-        //[HttpPost("new", Name = "UploadMedia")]
-        //[RequestSizeLimit(6000000000)]
-        //public async Task<IActionResult> UploadMedia()
-        //{
-        //    var result = await _mediator.Send(new UploadAudioCommand(Request));
-
-        //    if(result == null)
-        //    {
-        //        return NotFound();
-        //    }
-            
-        //    var media = await _mediator.Send(new FindByIdQuery(result.MediaId));
-        //    return Ok(media);
-        //}
-
+        
         [HttpGet("all/{instructorId}", Name = "FindByProfileId")]
         public async Task<IActionResult> FindByProfileId(string instructorId)
         {

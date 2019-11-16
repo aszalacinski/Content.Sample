@@ -79,19 +79,6 @@ namespace HAS.Content
                 options.MultipartBodyLengthLimit = 6000000000;
             });
 
-            services.AddAntiforgery(options =>
-            {
-                // Set Cookie properties using CookieBuilder properties†.
-                options.FormFieldName = "AntiforgeryFieldname";
-                options.HeaderName = "X-CSRF-TOKEN-HEADERNAME";
-                options.SuppressXFrameOptionsHeader = false;
-            });
-
-            services.AddControllers(config =>
-            {
-                config.Filters.Add<GenerateAntiforgeryTokenCookieAttribute>();
-                config.Filters.Add<DisableFormValueModelBindingAttribute>();
-            }).SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_3_0);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

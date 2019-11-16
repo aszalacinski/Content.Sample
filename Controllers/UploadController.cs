@@ -10,6 +10,7 @@ using AutoMapper;
 using HAS.Content.Data;
 using HAS.Content.Feature.Azure;
 using HAS.Content.Model;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -22,6 +23,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using static HAS.Content.Data.ContentContext;
+using static HAS.Content.Feature.Media.FindById;
+using static HAS.Content.Feature.Media.UploadAudio;
 
 namespace HAS.Content.Controllers
 {
@@ -30,262 +33,26 @@ namespace HAS.Content.Controllers
     [ApiController]
     public class UploadController : ControllerBase
     {
-        private readonly long _fileSizeLimit;
-        private readonly ILogger<UploadController> _logger;
-        private readonly string[] _permittedExtensions = { ".m4a" };
-        private readonly ICloudStorageService _cloudStorageService;
-        private readonly ContentContext _db;
-        private readonly MapperConfiguration _mapperConfiguration;
-
-        // Get the default form options so that we can use them to set the default 
-        // limits for request body data.
-        private static readonly FormOptions _defaultFormOptions = new FormOptions();
-
-        private readonly string _cloudStorageAccountConnectionString;
-
-        public UploadController(ILogger<UploadController> logger, ContentContext db, ICloudStorageService cloudStorageservice, IConfiguration configuration)
+        private readonly IMediator _mediator;
+        
+        public UploadController(IMediator mediator)
         {
-            _logger = logger;
-            _fileSizeLimit = 6000000000;
-            _db = db;
-            _cloudStorageService = cloudStorageservice;
-
-            _mapperConfiguration = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<ContentDAOProfile>();
-            });
-            _cloudStorageAccountConnectionString = configuration["Azure:Storage:ConnectionString"];
+            _mediator = mediator;
         }
 
         [HttpPost("audio", Name="UploadAudio")]
-        [DisableFormValueModelBinding]
-        [GenerateAntiforgeryTokenCookie]
         [RequestSizeLimit(6000000000)]
-        [RequestFormLimits(MultipartBodyLengthLimit = 6000000000)]
         public async Task<IActionResult> Audio()
         {
-            if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
+            var result = await _mediator.Send(new UploadAudioCommand(Request));
+
+            if (result == null)
             {
-                throw new ArgumentException("The media file could not be processed.");
+                return NotFound();
             }
 
-            string mediaId = string.Empty;
-            string instructorId = string.Empty;
-            try
-            {
-                // process file first
-                KeyValueAccumulator formAccumulator = new KeyValueAccumulator();
-
-                var streamedFileContent = new byte[0];
-
-                var boundary = MultipartRequestHelper.GetBoundary(
-                    MediaTypeHeaderValue.Parse(Request.ContentType),
-                    _defaultFormOptions.MultipartBoundaryLengthLimit
-                    );
-                var reader = new MultipartReader(boundary, Request.Body);
-                var section = await reader.ReadNextSectionAsync();
-
-                while (section != null)
-                {
-                    var hasContentDispositionHeader = ContentDispositionHeaderValue.TryParse(
-                        section.ContentDisposition, out var contentDisposition);
-
-                    if (hasContentDispositionHeader)
-                    {
-                        if (MultipartRequestHelper
-                            .HasFileContentDisposition(contentDisposition))
-                        {
-                            streamedFileContent =
-                                await FileHelpers.ProcessStreamedFile(section, contentDisposition,
-                                    _permittedExtensions, _fileSizeLimit);
-
-                        }
-                        else if (MultipartRequestHelper
-                            .HasFormDataContentDisposition(contentDisposition))
-                        {
-                            var key = HeaderUtilities.RemoveQuotes(contentDisposition.Name).Value;
-                            var encoding = FileHelpers.GetEncoding(section);
-
-                            if (encoding == null)
-                            {
-                                return BadRequest($"The request could not be processed: Bad Encoding");
-                            }
-
-                            using (var streamReader = new StreamReader(
-                                section.Body,
-                                encoding,
-                                detectEncodingFromByteOrderMarks: true,
-                                bufferSize: 1024,
-                                leaveOpen: true))
-                            {
-                                // The value length limit is enforced by 
-                                // MultipartBodyLengthLimit
-                                var value = await streamReader.ReadToEndAsync();
-
-                                if (string.Equals(value, "undefined",
-                                    StringComparison.OrdinalIgnoreCase))
-                                {
-                                    value = string.Empty;
-                                }
-
-                                formAccumulator.Append(key, value);
-
-                                if (formAccumulator.ValueCount >
-                                    _defaultFormOptions.ValueCountLimit)
-                                {
-                                    return BadRequest($"The request could not be processed: Key Count limit exceeded.");
-                                }
-                            }
-                        }
-                    }
-
-                    // Drain any remaining section body that hasn't been consumed and
-                    // read the headers for the next section.
-                    section = await reader.ReadNextSectionAsync();
-                }
-
-                var form = formAccumulator;
-                var file = streamedFileContent;
-
-                var results = form.GetResults();
-
-                instructorId = results["instructorId"];
-                string title = results["title"];
-                string firstName = results["firstName"];
-                string lastName = results["lastName"];
-                string durationInMinutes = results["durationInMinutes"];
-
-                //mediaId = await AddInstructorAudioMedia(instructorId, firstName, lastName, title, Convert.ToInt32(duration), DateTime.UtcNow, DateTime.UtcNow, file);
-
-                // TODO: calculate this some way automatically... someday
-                string fileExtension = "m4a";
-
-                // Generate Container Name - InstructorSpecific
-                string containerName = $"{firstName[0].ToString().ToLower()}{lastName.ToLower()}-{instructorId}";
-
-                // TODO: calculate this some way automatically... someday
-                string contentType = "audio/mp4";
-                // TODO: calculate this some way automatically... someday
-                FileType fileType = FileType.audio;
-
-                string authorName = $"{firstName} {lastName}";
-                string authorShortName = $"{firstName[0]}{lastName}";
-                string description = $"{authorShortName} - {title}";
-
-                // TODO: Get this from FFMPEG... someday
-                long duration = (Convert.ToInt32(durationInMinutes) * 60000);
-
-                // Generate new filename
-                string fileName = $"{firstName[0].ToString().ToLower()}{lastName.ToLower()}-{Guid.NewGuid()}";
-                
-                DateTime recordingDate = DateTime.UtcNow;
-                DateTime uploadDate = DateTime.UtcNow;
-                long blobSize = long.MinValue;
-                try
-                {
-                    // Update file properties in storage
-                    Dictionary<string, string> fileProperties = new Dictionary<string, string>();
-                    fileProperties.Add("ContentType", contentType);
-
-                    // update file metadata in storage
-                    Dictionary<string, string> metadata = new Dictionary<string, string>();
-                    metadata.Add("author", authorShortName);
-                    metadata.Add("tite", title);
-                    metadata.Add("description", description);
-                    metadata.Add("duration", duration.ToString());
-                    metadata.Add("recordingDate", recordingDate.ToString());
-                    metadata.Add("uploadDate", uploadDate.ToString());
-
-                    var fileNameWExt = $"{fileName}.{fileExtension}";
-
-                    //blobCreatedResult = await _cloudStorageService.CreateBlob(containerName, fileNameWExt, streamedFileContent, "audio", fileProperties, metadata);
-                    var blobContainer = await _cloudStorageService.CreateBlob(containerName, fileNameWExt, "audio");
-
-                    try
-                    {
-                        MemoryStream fileContent = new MemoryStream(streamedFileContent);
-                        fileContent.Position = 0;
-                        using (fileContent)
-                        {
-                            await blobContainer.UploadFromStreamAsync(fileContent);
-                        }
-
-                    }
-                    catch (StorageException e)
-                    {
-                        if (e.RequestInformation.HttpStatusCode == 403)
-                        {
-                            return BadRequest(e.Message);
-                        }
-                        else
-                        {
-                            return BadRequest(e.Message);
-                        }
-                    }
-
-                    try
-                    {
-                        foreach (var key in metadata.Keys.ToList())
-                        {
-                            blobContainer.Metadata.Add(key, metadata[key]);
-                        }
-
-                        await blobContainer.SetMetadataAsync();
-
-                    }
-                    catch (StorageException e)
-                    {
-                        return BadRequest(e.Message);
-                    }
-
-                    blobSize = await StorageUtils.GetBlobSize(blobContainer);
-                }
-                catch (StorageException e)
-                {
-                    return BadRequest(e.Message);
-                }
-
-                Media media = Media.Create(string.Empty, instructorId, authorName, fileName, fileType, fileExtension, recordingDate, uploadDate, ContentDetails.Create(title, description, duration, blobSize, 0, new List<string>()), StateDetails.Create(StatusType.STAGED, DateTime.MinValue, DateTime.UtcNow, DateTime.MaxValue), Manifest.Create(new Dictionary<string, string>()));
-
-                // upload to MongoDB
-                if (media != null)
-                {
-                    var mapper = new Mapper(_mapperConfiguration);
-
-                    var dao = mapper.Map<ContentDAO>(media);
-
-                    try
-                    {
-                        await _db.Content.InsertOneAsync(dao);
-                    }
-                    catch (Exception)
-                    {
-                        mediaId = string.Empty;
-                    }
-
-                    mediaId = dao.Id.ToString();
-                }
-                else
-                {
-                    // metadata wasn't stored, remove blob
-                    await _cloudStorageService.DeleteBlob(containerName, fileName, "audio");
-                    return BadRequest($"An issue occurred during media upload: rolling back storage change");
-                }
-                
-                if (string.IsNullOrEmpty(mediaId))
-                {
-                    return BadRequest($"Could not add instructor media");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-
-            var result = new { MediaId = mediaId, InstructorId = instructorId };
-
-            return Ok(result);
+            var media = await _mediator.Send(new FindByIdQuery(result.MediaId));
+            return Ok(media);
         }
 
         [HttpPost("video", Name = "UploadVideo")]
@@ -309,112 +76,4 @@ namespace HAS.Content.Controllers
         }
     }
 
-    public static class MultipartRequestHelper
-    {
-        // Content-Type: multipart/form-data; boundary="----WebKitFormBoundarymx2fSWqWSd0OxQqq"
-        // The spec at https://tools.ietf.org/html/rfc2046#section-5.1 states that 70 characters is a reasonable limit.
-        public static string GetBoundary(MediaTypeHeaderValue contentType, int lengthLimit)
-        {
-            var boundary = HeaderUtilities.RemoveQuotes(contentType.Boundary).Value;
-
-            if (string.IsNullOrWhiteSpace(boundary))
-            {
-                throw new InvalidDataException("Missing content-type boundary.");
-            }
-
-            if (boundary.Length > lengthLimit)
-            {
-                throw new InvalidDataException(
-                    $"Multipart boundary length limit {lengthLimit} exceeded.");
-            }
-
-            return boundary;
-        }
-
-        public static bool IsMultipartContentType(string contentType)
-        {
-            return !string.IsNullOrEmpty(contentType)
-                   && contentType.IndexOf("multipart/", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        public static bool HasFormDataContentDisposition(ContentDispositionHeaderValue contentDisposition)
-        {
-            // Content-Disposition: form-data; name="key";
-            return contentDisposition != null
-                && contentDisposition.DispositionType.Equals("form-data")
-                && string.IsNullOrEmpty(contentDisposition.FileName.Value)
-                && string.IsNullOrEmpty(contentDisposition.FileNameStar.Value);
-        }
-
-        public static bool HasFileContentDisposition(ContentDispositionHeaderValue contentDisposition)
-        {
-            // Content-Disposition: form-data; name="myfile1"; filename="Misc 002.jpg"
-            return contentDisposition != null
-                && contentDisposition.DispositionType.Equals("form-data")
-                && (!string.IsNullOrEmpty(contentDisposition.FileName.Value)
-                    || !string.IsNullOrEmpty(contentDisposition.FileNameStar.Value));
-        }
-    }
-
-    public class FileHelpers
-    {
-        public static async Task<byte[]> ProcessStreamedFile(
-            MultipartSection section, ContentDispositionHeaderValue contentDisposition,
-            string[] permittedExtensions,
-            long sizeLimit)
-        {
-            try
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    await section.Body.CopyToAsync(memoryStream);
-
-                    if (memoryStream.Length == 0)
-                    {
-                        throw new InvalidDataException($"The file is empty.");
-                    }
-                    else if (memoryStream.Length > sizeLimit)
-                    {
-                        var megabySizeLimit = sizeLimit / 1048576;
-                        throw new InvalidDataException($"The file exceeds {megabySizeLimit:N1} MB.");
-                    }
-                    else if (!permittedExtensions.Any(x => x.Equals(Path.GetExtension(contentDisposition.FileName.Value))))
-                    {
-                        throw new InvalidDataException($"The file type is not permitted");
-                    }
-                    else
-                    {
-                        return memoryStream.ToArray();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-        }
-
-        public static Encoding GetEncoding(MultipartSection section)
-        {
-            var hasMediaTypeHeader =
-                MediaTypeHeaderValue.TryParse(section.ContentType, out var mediaType);
-
-            // UTF-7 is insecure and shouldn't be honored. UTF-8 succeeds in 
-            // most cases.
-            if (!hasMediaTypeHeader || Encoding.UTF7.Equals(mediaType.Encoding))
-            {
-                return Encoding.UTF8;
-            }
-
-            return mediaType.Encoding;
-        }
-    }
-
-    public class AddMediaException : Exception
-    {
-        public AddMediaException() : base() { }
-
-        public AddMediaException(string message) : base(message) { }
-    }
 }
