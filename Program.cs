@@ -51,13 +51,22 @@ namespace HAS.Content
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseKestrel((ctx, options) =>
+                    webBuilder
+                    .UseStartup<Startup>()
+                    .ConfigureKestrel((ctx, options) =>
                     {
                         var config = ctx.Configuration;
 
                         options.Limits.MaxRequestBodySize = 6000000000;
-                    })
-                    .UseStartup<Startup>();
+                        options.Limits.MinRequestBodyDataRate =
+                            new MinDataRate(bytesPerSecond: 100,
+                                gracePeriod: TimeSpan.FromSeconds(10));
+                        options.Limits.MinResponseDataRate =
+                            new MinDataRate(bytesPerSecond: 100,
+                                gracePeriod: TimeSpan.FromSeconds(10));
+                        options.Limits.RequestHeadersTimeout =
+                            TimeSpan.FromMinutes(2);
+                    });
                 });
     }
 }
